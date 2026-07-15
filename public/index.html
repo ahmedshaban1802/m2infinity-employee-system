@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>نظام إدارة الموظفين — M2INFINITY</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--p:#0d9488;--pl:#14b8a6;--pd:#0f766e;--ac:#f59e0b;--ok:#22c55e;--err:#ef4444;--inf:#06b6d4;--bg:#f0fdf4;--bg2:#ecfdf5;--cd:#fff;--cdh:#f0fdfa;--tx:#134e4a;--mt:#6b7280;--bd:#d1fae5;--inp:#fff;--sh:0 4px 24px rgba(13,148,136,.08);--r:16px;--rs:10px}
+body.dk{--p:#2dd4bf;--pl:#5eead4;--pd:#14b8a6;--ac:#fbbf24;--bg:#0c1222;--bg2:#111827;--cd:#1a2332;--cdh:#1e293b;--tx:#e2e8f0;--mt:#94a3b8;--bd:#1e3a3a;--inp:#0f1a2e;--sh:0 4px 24px rgba(0,0,0,.3)}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;transition:background .4s,color .4s}
+body::before{content:'';position:fixed;inset:-50%;width:200%;height:200%;background:radial-gradient(ellipse at 20% 50%,rgba(13,148,136,.06) 0%,transparent 50%),radial-gradient(ellipse at 80% 20%,rgba(245,158,11,.04) 0%,transparent 50%);animation:bgF 20s ease-in-out infinite;z-index:-1;pointer-events:none}
+@keyframes bgF{0%,100%{transform:translate(0,0)}50%{transform:translate(2%,-1%)}}
+#authScreen{position:fixed;inset:0;background:linear-gradient(135deg,#0c1222,#0f2027 30%,#0d3b3b 70%,#0c1222);display:flex;justify-content:center;align-items:center;z-index:9999;overflow-y:auto;padding:20px 0}
+#authScreen::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 30% 40%,rgba(13,148,136,.15) 0%,transparent 60%),radial-gradient(circle at 70% 70%,rgba(245,158,11,.08) 0%,transparent 50%);animation:aP 8s ease-in-out infinite alternate}
+@keyframes aP{0%{opacity:.6;transform:scale(1)}100%{opacity:1;transform:scale(1.1)}}
+.aptc{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.aptc span{position:absolute;width:3px;height:3px;background:rgba(13,148,136,.4);border-radius:50%;animation:pFl linear infinite}
+@keyframes pFl{0%{transform:translateY(100vh) scale(0);opacity:0}10%{opacity:1}90%{opacity:1}100%{transform:translateY(-10vh) scale(1);opacity:0}}
+.authCard{position:relative;z-index:2;background:rgba(26,35,50,.88);backdrop-filter:blur(30px);padding:30px 26px;border-radius:22px;text-align:center;color:#e2e8f0;width:460px;max-width:94vw;border:1px solid rgba(45,212,191,.15);box-shadow:0 25px 60px rgba(0,0,0,.4);animation:aIn .6s ease-out}
+@keyframes aIn{from{opacity:0;transform:translateY(30px) scale(.95)}to{opacity:1;transform:translateY(0) scale(1)}}
+.authLogo{width:70px;height:70px;margin:0 auto 12px;background:linear-gradient(135deg,var(--p),var(--ac));border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:30px;color:#fff;box-shadow:0 8px 24px rgba(13,148,136,.3);animation:lFl 3s ease-in-out infinite;overflow:hidden}
+.authLogo img{width:100%;height:100%;object-fit:cover}
+@keyframes lFl{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+.authTitle{font-size:20px;font-weight:900;margin-bottom:3px}
+.authSub{color:#94a3b8;margin-bottom:16px;font-size:12px}
+.authIn{width:100%;padding:11px 14px;margin-bottom:7px;border-radius:var(--rs);border:1px solid rgba(45,212,191,.15);background:rgba(15,23,42,.6);color:#e2e8f0;text-align:center;font-family:'Cairo';font-size:13px;transition:.3s}
+.authIn:focus{outline:none;border-color:var(--p);box-shadow:0 0 0 3px rgba(13,148,136,.15)}
+.authIn::placeholder{color:#64748b}
+.authBtn{width:100%;padding:11px;background:linear-gradient(135deg,var(--pd),var(--pl));color:#fff;border:none;border-radius:var(--rs);cursor:pointer;font-weight:700;font-size:14px;font-family:'Cairo';transition:.3s;box-shadow:0 4px 16px rgba(13,148,136,.3);margin-top:4px}
+.authBtn:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(13,148,136,.4)}
+.authBtn:disabled{opacity:.4;cursor:not-allowed;transform:none!important}
+.authSw{margin-top:12px;padding-top:10px;border-top:1px solid rgba(45,212,191,.1)}
+.authSw p{color:#94a3b8;font-size:11px;margin-bottom:5px}
+.authSwBtn{background:transparent;border:1px solid rgba(45,212,191,.3);color:var(--pl);padding:8px 16px;border-radius:var(--rs);cursor:pointer;font-family:'Cairo';font-weight:700;font-size:12px;transition:.3s;width:100%}
+.authSwBtn:hover{background:rgba(45,212,191,.1);border-color:var(--pl)}
+.afs{display:none}.afs.on{display:block}
+.ferr{color:#f87171;font-size:10px;margin-top:-3px;margin-bottom:5px;display:none;text-align:center;min-height:12px}
+.ferr.on{display:block}
+.cardUpload{margin:10px 0;text-align:right}
+.cardUpload label{display:block;font-size:11px;color:#e2e8f0;margin-bottom:5px;font-weight:700}
+.cardUpload .req{color:#f87171;margin-right:3px}
+.cardGrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.cardBox{border:2px dashed rgba(239,68,68,.4);border-radius:12px;padding:12px;text-align:center;cursor:pointer;transition:.3s;background:rgba(15,23,42,.3);min-height:95px;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.cardBox:hover{border-color:var(--pl);background:rgba(13,148,136,.08)}
+.cardBox.done{border-color:var(--ok);border-style:solid;background:rgba(34,197,94,.05)}
+.cardBox img{max-width:100%;max-height:75px;object-fit:contain;border-radius:6px}
+.cardBox i{font-size:20px;color:#64748b;margin-bottom:3px}
+.cardBox span{font-size:9px;color:#94a3b8}
+.cardBox.done span{color:var(--ok);font-weight:700}
+.cardBox input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.ctn{display:none;max-width:1400px;margin:0 auto;padding:18px}
+header{background:var(--cd);padding:12px 20px;border-radius:var(--r);display:flex;justify-content:space-between;align-items:center;box-shadow:var(--sh);margin-bottom:18px;border:1px solid var(--bd);flex-wrap:wrap;gap:8px;position:relative}
+.hdrB{display:flex;align-items:center;gap:8px}
+.hdrB img{width:36px;height:36px;border-radius:9px;object-fit:cover}
+.hdrB h2{font-size:16px;font-weight:900}
+.hdrR{display:inline-block;margin-top:1px;padding:1px 9px;background:linear-gradient(135deg,var(--pd),var(--pl));color:#fff;border-radius:18px;font-size:10px;font-weight:700}
+.hdrA{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.lclk{font-family:'Courier New',monospace;font-size:14px;font-weight:700;color:var(--p);background:var(--inp);padding:5px 10px;border-radius:var(--rs);border:1px solid var(--bd)}
+.bIcon{background:var(--inp);color:var(--tx);border:1px solid var(--bd);padding:7px 11px;border-radius:var(--rs);cursor:pointer;transition:.3s;font-size:13px;position:relative}
+.bIcon:hover{background:var(--p);color:#fff;border-color:var(--p);transform:translateY(-1px)}
+.bIcon.dng:hover{background:var(--err);border-color:var(--err)}
+.nBadge{position:absolute;top:-5px;right:-5px;min-width:16px;height:16px;background:var(--err);color:#fff;border-radius:9px;font-size:9px;font-weight:900;display:flex;align-items:center;justify-content:center;animation:bpul 2s infinite;padding:0 3px}
+@keyframes bpul{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
+.nDrop{position:absolute;top:calc(100% + 6px);left:0;width:350px;max-width:88vw;background:var(--cd);border:1px solid var(--bd);border-radius:var(--r);box-shadow:0 12px 40px rgba(0,0,0,.15);z-index:500;display:none;animation:ndIn .25s ease;overflow:hidden}
+.nDrop.on{display:block}
+@keyframes ndIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+.nDH{padding:10px 14px;border-bottom:1px solid var(--bd);display:flex;justify-content:space-between;align-items:center}
+.nDH h4{font-size:13px;font-weight:900;display:flex;align-items:center;gap:5px}
+.nDH button{background:var(--p);color:#fff;border:none;padding:3px 8px;border-radius:5px;font-size:9px;font-family:'Cairo';font-weight:700;cursor:pointer}
+.nFils{display:flex;gap:2px;padding:6px 10px;border-bottom:1px solid var(--bd);overflow-x:auto}
+.nFB{padding:3px 8px;border-radius:5px;border:1px solid var(--bd);background:transparent;color:var(--mt);font-size:9px;font-family:'Cairo';font-weight:600;cursor:pointer;white-space:nowrap;transition:.2s}
+.nFB:hover,.nFB.on{background:var(--p);color:#fff;border-color:var(--p)}
+.nLst{max-height:280px;overflow-y:auto}
+.nIt{display:flex;align-items:flex-start;gap:8px;padding:8px 12px;border-bottom:1px solid var(--bd);transition:.2s;cursor:default}
+.nIt:hover{background:var(--cdh)}
+.nIt.ur{background:rgba(13,148,136,.04)}
+.nIt.ur::before{content:'';width:5px;height:5px;background:var(--p);border-radius:50%;flex-shrink:0;margin-top:5px}
+.nIC{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0}
+.nBD{flex:1;min-width:0}
+.nBD .nM{font-size:11px;line-height:1.4;word-break:break-word}
+.nBD .nT{font-size:9px;color:var(--mt);margin-top:1px}
+.nEm{text-align:center;padding:20px;color:var(--mt);font-size:12px}
+.nEm i{font-size:26px;display:block;margin-bottom:6px;opacity:.3}
+.nDFt{padding:8px;text-align:center;border-top:1px solid var(--bd)}
+.nDFt button{background:transparent;border:1px solid var(--bd);color:var(--p);padding:5px 14px;border-radius:var(--rs);cursor:pointer;font-family:'Cairo';font-weight:700;font-size:10px;transition:.2s}
+.nDFt button:hover{background:var(--p);color:#fff}
+.wBan{background:linear-gradient(135deg,var(--pd),var(--pl),var(--inf));color:#fff;padding:16px 22px;border-radius:var(--r);margin-bottom:18px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 8px 32px rgba(13,148,136,.25);position:relative;overflow:hidden;flex-wrap:wrap;gap:10px}
+.wBan::before{content:'';position:absolute;top:-40%;right:-10%;width:300px;height:300px;background:rgba(255,255,255,.06);border-radius:50%}
+.wBan h2{font-size:17px;font-weight:900;position:relative;z-index:1}
+.wBan p{opacity:.85;font-size:11px;margin-top:2px;position:relative;z-index:1}
+.wBan .wT{font-size:20px;font-weight:900;position:relative;z-index:1}
+.tabs{display:flex;gap:3px;margin-bottom:18px;background:var(--cd);padding:4px;border-radius:var(--r);box-shadow:var(--sh);border:1px solid var(--bd);overflow-x:auto;position:relative}
+.tabs .tBtn .tDot{display:none;width:7px;height:7px;background:var(--err);border-radius:50%;margin-right:3px;animation:bpul 2s infinite}
+.tabs .tBtn.hasN .tDot{display:inline-block}
+.tBtn{flex:1;padding:9px 5px;border-radius:9px;border:none;cursor:pointer;background:transparent;color:var(--mt);font-weight:700;font-size:10px;font-family:'Cairo';transition:.3s;white-space:nowrap;display:flex;align-items:center;justify-content:center;gap:2px}
+.tBtn:hover{color:var(--tx);background:var(--bg2)}
+.tBtn.on{background:linear-gradient(135deg,var(--pd),var(--pl));color:#fff}
+.tCnt{display:none;animation:tF .4s ease}
+.tCnt.on{display:block}
+@keyframes tF{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.sGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px;margin-bottom:18px}
+.sCard{background:var(--cd);padding:16px 10px;border-radius:var(--r);text-align:center;box-shadow:var(--sh);border:1px solid var(--bd);transition:.3s;position:relative;overflow:hidden;cursor:default}
+.sCard:hover{transform:translateY(-3px);box-shadow:0 12px 40px rgba(13,148,136,.12)}
+.sCard::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.sCard:nth-child(1)::before{background:var(--p)}.sCard:nth-child(2)::before{background:var(--ok)}.sCard:nth-child(3)::before{background:var(--err)}.sCard:nth-child(4)::before{background:var(--ac)}.sCard:nth-child(5)::before{background:#a855f7}.sCard:nth-child(6)::before{background:#ec4899}
+.sIC{width:36px;height:36px;margin:0 auto 6px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:14px}
+.sLab{font-size:9px;color:var(--mt);margin-bottom:1px}
+.sVal{font-size:20px;font-weight:900}
+.sCard:nth-child(1) .sIC{background:rgba(13,148,136,.1);color:var(--p)}.sCard:nth-child(1) .sVal{color:var(--p)}
+.sCard:nth-child(2) .sIC{background:rgba(34,197,94,.1);color:var(--ok)}.sCard:nth-child(2) .sVal{color:var(--ok)}
+.sCard:nth-child(3) .sIC{background:rgba(239,68,68,.1);color:var(--err)}.sCard:nth-child(3) .sVal{color:var(--err)}
+.sCard:nth-child(4) .sIC{background:rgba(245,158,11,.1);color:var(--ac)}.sCard:nth-child(4) .sVal{color:var(--ac)}
+.sCard:nth-child(5) .sIC{background:rgba(168,85,247,.1);color:#a855f7}.sCard:nth-child(5) .sVal{color:#a855f7}
+.sCard:nth-child(6) .sIC{background:rgba(236,72,153,.1);color:#ec4899}.sCard:nth-child(6) .sVal{color:#ec4899}
+.cGrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px}
+.cCard{background:var(--cd);padding:16px;border-radius:var(--r);box-shadow:var(--sh);border:1px solid var(--bd)}
+.cCard h3{font-size:12px;margin-bottom:10px;font-weight:700}
+.tBar{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;align-items:center}
+.srch{padding:7px 12px;border-radius:var(--rs);border:1px solid var(--bd);background:var(--inp);color:var(--tx);font-family:'Cairo';font-size:11px;transition:.3s;flex:1;min-width:120px}
+.srch:focus{outline:none;border-color:var(--p);box-shadow:0 0 0 3px rgba(13,148,136,.1)}
+.fSel{padding:7px 12px;border-radius:var(--rs);border:1px solid var(--bd);background:var(--inp);color:var(--tx);font-family:'Cairo';font-size:11px;cursor:pointer}
+.dIn{padding:7px 10px;border-radius:var(--rs);border:1px solid var(--bd);background:var(--inp);color:var(--tx);font-family:'Cairo';font-size:10px;cursor:pointer}
+.bP{padding:7px 14px;border-radius:var(--rs);border:none;cursor:pointer;font-weight:700;font-family:'Cairo';font-size:11px;background:linear-gradient(135deg,var(--pd),var(--pl));color:#fff;transition:.3s;white-space:nowrap}
+.bP:hover{transform:translateY(-2px)}
+.bS{background:linear-gradient(135deg,#16a34a,#22c55e)!important}
+.bW{background:linear-gradient(135deg,#d97706,#f59e0b)!important;color:#1a1a2e!important}
+.bI{background:linear-gradient(135deg,#0891b2,#06b6d4)!important}
+.bD{padding:7px 14px;border-radius:var(--rs);border:none;cursor:pointer;font-weight:700;font-family:'Cairo';font-size:11px;background:linear-gradient(135deg,#dc2626,#ef4444);color:#fff;transition:.3s;white-space:nowrap}
+.bD:hover{transform:translateY(-2px)}
+.bSm{padding:4px 8px;font-size:9px;border-radius:5px;border:none;cursor:pointer;font-family:'Cairo';font-weight:600;transition:.3s}
+.bSm:hover{transform:scale(1.05)}
+.tWrap{background:var(--cd);border-radius:var(--r);box-shadow:var(--sh);border:1px solid var(--bd);overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:600px}
+thead th{background:linear-gradient(135deg,var(--pd),var(--p));color:#fff;padding:9px 5px;font-weight:700;font-size:10px;white-space:nowrap}
+tbody td{padding:8px 5px;text-align:center;font-size:10px;border-bottom:1px solid var(--bd);vertical-align:middle}
+tbody tr{transition:.2s}tbody tr:hover{background:var(--cdh)}tbody tr:last-child td{border-bottom:none}
+.actCell{display:flex;gap:4px;justify-content:center;flex-wrap:wrap}
+.emSt{text-align:center;padding:28px 18px;color:var(--mt)}
+.emSt i{font-size:30px;margin-bottom:8px;opacity:.3;display:block}
+.pag{display:flex;gap:4px;justify-content:center;margin-top:10px;align-items:center}
+.pag button{padding:5px 9px;border-radius:5px;border:1px solid var(--bd);background:var(--cd);color:var(--tx);cursor:pointer;font-family:'Cairo';font-size:10px;font-weight:600;transition:.3s}
+.pag button:hover,.pag button.on{background:var(--p);color:#fff;border-color:var(--p)}
+.pag button:disabled{opacity:.3;cursor:not-allowed}
+.mOvl{position:fixed;inset:0;background:rgba(0,0,0,.5);backdrop-filter:blur(6px);z-index:1000;display:none;justify-content:center;align-items:center}
+.mOvl.on{display:flex;animation:mB .3s}
+@keyframes mB{from{opacity:0}to{opacity:1}}
+.mDlg{background:var(--cd);border-radius:var(--r);padding:22px;width:540px;max-width:94vw;max-height:90vh;overflow-y:auto;box-shadow:0 12px 40px rgba(0,0,0,.15);border:1px solid var(--bd);animation:mI .3s ease-out}
+@keyframes mI{from{opacity:0;transform:translateY(20px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+.mHdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--bd)}
+.mHdr h3{font-size:15px;font-weight:900}
+.mCls{width:30px;height:30px;border-radius:8px;border:none;background:var(--bg2);color:var(--mt);cursor:pointer;font-size:14px;transition:.3s;display:flex;align-items:center;justify-content:center}
+.mCls:hover{background:var(--err);color:#fff}
+.fGrp{margin-bottom:10px}
+.fGrp label{display:block;margin-bottom:3px;font-size:10px;font-weight:700;color:var(--mt)}
+.fInp{width:100%;padding:8px 10px;border-radius:var(--rs);border:1px solid var(--bd);background:var(--inp);color:var(--tx);font-family:'Cairo';font-size:11px;transition:.3s}
+.fInp:focus{outline:none;border-color:var(--p);box-shadow:0 0 0 3px rgba(13,148,136,.1)}
+.fInp[readonly]{opacity:.6;cursor:not-allowed}
+.fRow{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.mAct{display:flex;gap:6px;margin-top:16px}
+.mAct button{flex:1;padding:9px;font-family:'Cairo';font-weight:700;font-size:11px;border-radius:var(--rs);cursor:pointer;border:none;transition:.3s}
+textarea.fInp{resize:vertical;min-height:45px}
+.attG{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-bottom:18px}
+.attC{background:var(--cd);padding:16px;border-radius:var(--r);text-align:center;box-shadow:var(--sh);border:1px solid var(--bd)}
+.attC h3{margin-bottom:3px;font-size:12px;font-weight:700}
+.attC p{color:var(--mt);font-size:9px;margin-bottom:8px}
+.aSt{margin-top:6px;font-weight:700;font-size:10px;padding:5px;border-radius:6px}
+.aSt.no{background:rgba(107,114,128,.1);color:var(--mt)}
+.aSt.ci{background:rgba(34,197,94,.1);color:var(--ok)}
+.aSt.co{background:rgba(6,182,212,.1);color:var(--inf)}
+.gCo{font-family:monospace;font-size:9px;color:var(--mt);margin-top:3px}
+.mBtns{display:flex;gap:4px;justify-content:center;margin-top:5px;flex-wrap:wrap}
+.salSum{background:var(--cd);padding:14px;border-radius:var(--r);box-shadow:var(--sh);border:1px solid var(--bd);margin-bottom:10px;display:flex;gap:24px;flex-wrap:wrap;justify-content:center}
+.salSI{text-align:center}
+.salSI .sl{font-size:10px;color:var(--mt)}
+.salSI .sv{font-size:18px;font-weight:900;margin-top:2px}
+.alrt{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:var(--rs);padding:10px;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.alrt i{font-size:18px;color:var(--err)}
+.alrt .aTx{flex:1}
+.alrt .aTx strong{color:var(--err);font-size:12px}
+.alrt .aTx p{font-size:10px;color:var(--mt);margin-top:1px}
+.dlyA{background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:var(--rs);padding:10px;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.dlyA i{font-size:18px;color:var(--ac)}
+.dlyA .dTx{flex:1}
+.dlyA .dTx strong{color:var(--ac);font-size:12px}
+.dlyA .dTx p{font-size:10px;color:var(--mt);margin-top:1px}
+.lBdg{display:inline-block;padding:1px 6px;border-radius:4px;font-size:8px;font-weight:700}
+.lBdg.pending{background:rgba(245,158,11,.1);color:var(--ac)}
+.lBdg.approved{background:rgba(34,197,94,.1);color:var(--ok)}
+.lBdg.rejected{background:rgba(239,68,68,.1);color:var(--err)}
+.pndC{background:var(--bg2);border:1px solid var(--bd);border-radius:var(--rs);padding:10px;margin-bottom:7px;display:flex;align-items:center;gap:10px;transition:.3s}
+.pndC:hover{box-shadow:var(--sh)}
+.pndAv{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--ac),#fbbf24);display:flex;align-items:center;justify-content:center;font-size:15px;color:#fff;font-weight:900;flex-shrink:0;overflow:hidden}
+.pndAv img{width:100%;height:100%;object-fit:cover}
+.pndInf{flex:1;min-width:0}
+.pndInf h4{font-size:12px;font-weight:700;margin-bottom:1px}
+.pndInf p{font-size:9px;color:var(--mt)}
+.pndAct{display:flex;gap:4px;flex-shrink:0;flex-wrap:wrap}
+.pndAct button{padding:5px 10px;border-radius:5px;border:none;cursor:pointer;font-family:'Cairo';font-weight:700;font-size:9px;transition:.3s;white-space:nowrap}
+.pndAct .pOk{background:var(--ok);color:#fff}
+.pndAct .pNo{background:var(--err);color:#fff}
+.empV{max-width:880px;margin:0 auto}
+.eTabs{display:flex;gap:3px;margin-bottom:14px;background:var(--cd);padding:3px;border-radius:var(--r);box-shadow:var(--sh);border:1px solid var(--bd);overflow-x:auto}
+.eTBtn{flex:1;padding:7px 4px;border-radius:7px;border:none;cursor:pointer;background:transparent;color:var(--mt);font-weight:700;font-size:9px;font-family:'Cairo';transition:.3s;white-space:nowrap}
+.eTBtn:hover{color:var(--tx);background:var(--bg2)}
+.eTBtn.on{background:linear-gradient(135deg,var(--pd),var(--pl));color:#fff}
+.eTCnt{display:none;animation:tF .3s ease}
+.eTCnt.on{display:block}
+.eInfoC{background:var(--cd);padding:22px;border-radius:var(--r);box-shadow:var(--sh);border:1px solid var(--bd);text-align:center;margin-bottom:14px}
+.eAvW{width:80px;height:80px;border-radius:50%;margin:0 auto 12px;position:relative;cursor:pointer;box-shadow:0 8px 24px rgba(13,148,136,.2)}
+.eAvW .eAvB{width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,var(--p),var(--ac));display:flex;align-items:center;justify-content:center;font-size:30px;color:#fff;font-weight:900}
+.eAvW img{width:80px;height:80px;object-fit:cover;border-radius:50%;position:absolute;top:0;left:0}
+.eAvW .eOv{position:absolute;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;opacity:0;transition:.3s;border-radius:50%}
+.eAvW:hover .eOv{opacity:1}
+.eInfoC h2{font-size:16px;font-weight:900;margin-bottom:2px}
+.eInfoC .jT{color:var(--mt);margin-bottom:12px;font-size:11px}
+.eSec{background:var(--cd);padding:16px;border-radius:var(--r);box-shadow:var(--sh);border:1px solid var(--bd);margin-bottom:14px}
+.eSec h3{margin-bottom:10px;font-weight:700;font-size:13px;display:flex;align-items:center;gap:5px}
+.eAttB{display:flex;gap:8px;justify-content:center;margin-bottom:10px}
+.eAttB button{padding:10px 22px;font-size:13px;border-radius:var(--rs);border:none;cursor:pointer;font-family:'Cairo';font-weight:700;transition:.3s}
+.eAttB .bIn{background:linear-gradient(135deg,#16a34a,#22c55e);color:#fff}
+.eAttB .bOut{background:linear-gradient(135deg,#d97706,#f59e0b);color:#1a1a2e}
+.eAttB button:hover{transform:translateY(-2px)}
+.eAttB button:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.salDC{background:var(--cd);padding:0;border-radius:var(--r);box-shadow:var(--sh);border:1px solid var(--bd);overflow:hidden;margin-bottom:14px}
+.salDH{background:linear-gradient(135deg,var(--pd),var(--pl));color:#fff;padding:12px 18px;text-align:center;font-weight:900;font-size:13px}
+.salDB{padding:14px 18px}
+.sRow{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--bd);font-size:11px;align-items:center}
+.sRow:last-child{border-bottom:none}
+.sRow .sRL{color:var(--mt);display:flex;align-items:center;gap:5px}
+.sRow .sRL i{font-size:11px;width:14px;text-align:center}
+.sRow .sV{font-weight:900;font-size:12px}
+.sRow.dd .sV{color:var(--err)}
+.sRow.tot{border-top:2px solid var(--p);border-bottom:none;margin-top:4px;padding-top:10px;font-size:14px}
+.sRow.tot .sV{color:var(--p);font-size:16px}
+.finG{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:10px}
+.finC{background:var(--bg2);border-radius:var(--rs);padding:10px;text-align:center;border:1px solid var(--bd)}
+.finC .fI{font-size:16px;margin-bottom:3px}
+.finC .fV{font-size:14px;font-weight:900}
+.finC .fL{font-size:8px;color:var(--mt);margin-top:2px}
+.finC.gn .fI,.finC.gn .fV{color:var(--ok)}
+.finC.rd .fI,.finC.rd .fV{color:var(--err)}
+.finC.bl .fI,.finC.bl .fV{color:var(--inf)}
+.finC.gd .fI,.finC.gd .fV{color:var(--ac)}
+.cardPV{width:320px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.15);color:#1a1a2e;font-family:'Cairo'}
+.cardHB{height:60px;background:linear-gradient(135deg,#0f766e,#0d9488,#14b8a6);position:relative;display:flex;align-items:center;justify-content:flex-end;padding:0 14px;gap:6px}
+.cardHB img{height:28px;object-fit:contain}
+.cardHB .cCN{color:#fff;font-size:10px;font-weight:700;opacity:.8}
+.cardAV{width:52px;height:52px;border-radius:50%;background:#fff;border:3px solid #fff;position:absolute;bottom:-26px;left:50%;transform:translateX(-50%);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;color:#0d9488;box-shadow:0 4px 12px rgba(0,0,0,.1);overflow:hidden}
+.cardAV img{width:100%;height:100%;object-fit:cover}
+.cardBD{padding:32px 16px 16px;text-align:center}
+.cardBD h3{font-size:15px;font-weight:900;margin-bottom:2px}
+.cardBD .cJB{color:#6b7280;font-size:10px;margin-bottom:10px}
+.cIR{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f3f4f6;font-size:10px}
+.cIR span:first-child{color:#9ca3af}.cIR span:last-child{font-weight:700;color:#1a1a2e}
+.setSec{margin-bottom:16px}
+.setSec h4{font-size:12px;font-weight:900;margin-bottom:8px;display:flex;align-items:center;gap:4px;color:var(--p)}
+.logoPV{width:70px;height:70px;border-radius:var(--rs);border:2px dashed var(--bd);display:flex;align-items:center;justify-content:center;margin:0 auto 8px;overflow:hidden;cursor:pointer;transition:.3s;background:var(--bg2)}
+.logoPV:hover{border-color:var(--p)}
+.logoPV img{width:100%;height:100%;object-fit:cover}
+.logoPV i{font-size:20px;color:var(--mt)}
+.codeDB{background:rgba(13,148,136,.1);border:1px solid rgba(45,212,191,.2);border-radius:var(--rs);padding:8px;margin-bottom:10px;text-align:center}
+.codeDB span{font-size:9px;color:#94a3b8;display:block;margin-bottom:2px}
+.codeDB strong{font-size:18px;color:var(--pl);letter-spacing:3px;font-family:'Courier New',monospace}
+.mTb{width:100%;border-collapse:collapse;min-width:auto}
+.mTb th{background:var(--bg2);color:var(--tx);padding:6px 4px;font-size:9px;font-weight:700;border-bottom:1px solid var(--bd)}
+.mTb td{padding:6px 4px;font-size:9px;border-bottom:1px solid var(--bd);text-align:center}
+.nmLst{max-height:55vh;overflow-y:auto}
+.nmIt{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-bottom:1px solid var(--bd);transition:.2s}
+.nmIt.ur{border-right:3px solid var(--p);background:rgba(13,148,136,.03)}
+.nmIt:hover{background:var(--cdh)}
+.nmIC{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+.nmBD{flex:1}
+.nmBD .nmM{font-size:11px;line-height:1.5}
+.nmBD .nmMt{font-size:9px;color:var(--mt);margin-top:2px;display:flex;gap:8px}
+.gps-info{background:rgba(6,182,212,.08);border:1px solid rgba(6,182,212,.2);border-radius:var(--rs);padding:8px;margin-top:6px;font-size:9px;color:var(--inf);text-align:center}
+#toastC{position:fixed;bottom:18px;left:18px;z-index:10000;display:flex;flex-direction:column;gap:6px}
+.toast{padding:10px 16px;border-radius:var(--rs);color:#fff;font-weight:700;font-family:'Cairo';font-size:11px;animation:tIn .4s ease-out,tOut .4s 3s forwards;box-shadow:0 8px 24px rgba(0,0,0,.2);display:flex;align-items:center;gap:6px;max-width:340px}
+.toast.success{background:linear-gradient(135deg,#16a34a,#22c55e)}
+.toast.error{background:linear-gradient(135deg,#dc2626,#ef4444)}
+.toast.warning{background:linear-gradient(135deg,#d97706,#f59e0b)}
+.toast.info{background:linear-gradient(135deg,#0891b2,#06b6d4)}
+@keyframes tIn{from{transform:translateX(-120%);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes tOut{to{transform:translateX(-120%);opacity:0}}
+.upc-scan-input{width:100%;padding:8px;border-radius:var(--rs);border:1px solid var(--bd);background:var(--inp);color:var(--tx);font-family:'Courier New',monospace;font-size:14px;text-align:center;letter-spacing:2px;transition:.3s;margin-bottom:6px}
+.upc-scan-input:focus{outline:none;border-color:var(--p);box-shadow:0 0 0 3px rgba(13,148,136,.1)}
+.accRow{display:flex;align-items:center;gap:10px;padding:10px;border-bottom:1px solid var(--bd);transition:.2s}
+.accRow:hover{background:var(--cdh)}
+.accRow:last-child{border-bottom:none}
+.accInf{flex:1;min-width:0}
+.accInf h4{font-size:12px;font-weight:700}
+.accInf p{font-size:9px;color:var(--mt)}
+.accAct{display:flex;gap:4px;flex-shrink:0}
+.upc-btns{display:flex;gap:4px;margin-top:4px}
+.upc-btns button{flex:1;padding:7px 6px;border-radius:var(--rs);border:none;cursor:pointer;font-weight:700;font-family:'Cairo';font-size:10px;transition:.3s;white-space:nowrap}
+.upc-btns button:hover{transform:translateY(-1px)}
+@media(max-width:900px){.attG{grid-template-columns:1fr 1fr}.cGrid{grid-template-columns:1fr}.fRow{grid-template-columns:1fr}header{flex-direction:column;gap:6px;text-align:center}.hdrA{justify-content:center}.salSum{flex-direction:column;gap:8px;align-items:center}.wBan{flex-direction:column;text-align:center}.finG{grid-template-columns:1fr 1fr}.nDrop{left:auto;right:0}}
+@media(max-width:600px){.tabs{gap:2px;padding:2px}.tBtn{font-size:8px;padding:6px 3px}.sGrid{grid-template-columns:1fr 1fr}.sVal{font-size:16px}.wBan .wT{font-size:14px}.eTabs{gap:1px;padding:2px}.eTBtn{font-size:7px;padding:5px 2px}.finG{grid-template-columns:1fr}.pndC{flex-direction:column;text-align:center}.pndAct{justify-content:center}.cardGrid{grid-template-columns:1fr}.nDrop{width:calc(100vw - 36px)}.upc-btns{flex-direction:column}}
+::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--p);border-radius:10px}
+@media print{header,.tabs,.tBar,.actCell,.mOvl,#toastC{display:none!important}.tCnt{display:block!important}.tWrap{box-shadow:none;border:1px solid #ddd}}
+</style>
+</head>
+<body>
+
+<!-- شاشة تحميل Firebase -->
+<div id="fbLoading" style="position:fixed;inset:0;background:linear-gradient(135deg,#0c1222,#0f2027 30%,#0d3b3b 70%,#0c1222);display:flex;flex-direction:column;justify-content:center;align-items:center;z-index:99999;color:#e2e8f0;font-family:Cairo,sans-serif">
+<div style="width:50px;height:50px;border:4px solid rgba(45,212,191,.2);border-top-color:#2dd4bf;border-radius:50%;animation:spin 1s linear infinite"></div>
+<p style="margin-top:16px;font-size:14px;font-weight:700">جاري تحميل البيانات...</p>
+<p style="margin-top:4px;font-size:11px;color:#94a3b8">يرجى الانتظار</p>
+</div>
+<style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+
+<!-- شاشة الدخول -->
+<div id="authScreen">
+<div class="aptc" id="aptc"></div>
+<div class="authCard">
+<div class="authLogo" id="authLogo"><i class="fas fa-users-cog"></i></div>
+<div id="frmLogin" class="afs on">
+<h2 class="authTitle">تسجيل الدخول</h2>
+<p class="authSub">سجّل دخولك للمتابعة</p>
+<input type="text" id="inpUser" class="authIn" placeholder="اسم المستخدم" autocomplete="off">
+<input type="password" id="inpPass" class="authIn" placeholder="كلمة المرور" autocomplete="off">
+<div class="ferr" id="errLogin"></div>
+<button class="authBtn" onclick="doLogin()"><i class="fas fa-sign-in-alt"></i> تسجيل الدخول</button>
+<div class="authSw"><p>ليس لديك حساب؟</p><button class="authSwBtn" onclick="swF('reg')"><i class="fas fa-user-plus"></i> إنشاء حساب جديد</button></div>
+</div>
+<div id="frmReg" class="afs">
+<h2 class="authTitle">إنشاء حساب جديد</h2>
+<p class="authSub">أدخل بياناتك وسيتم مراجعة طلبك</p>
+<input type="text" id="regName" class="authIn" placeholder="الاسم الكامل" autocomplete="off">
+<input type="text" id="regJob" class="authIn" placeholder="الوظيفة" autocomplete="off">
+<input type="text" id="regUser" class="authIn" placeholder="اسم المستخدم المطلوب" autocomplete="off">
+<div class="ferr" id="errUser"></div>
+<input type="password" id="regPass" class="authIn" placeholder="كلمة المرور" autocomplete="off">
+<input type="password" id="regPass2" class="authIn" placeholder="تأكيد كلمة المرور" autocomplete="off">
+<div class="ferr" id="errPass"></div>
+<div class="cardUpload">
+<label><i class="fas fa-id-card"></i> صورة بطاقة الموظف <span class="req">*</span> (إجباري)</label>
+<div class="cardGrid">
+<div class="cardBox" id="boxFront"><i class="fas fa-id-card"></i><span>الوجه الأمامي *</span><input type="file" accept="image/*" onchange="upCard(this,'front')"></div>
+<div class="cardBox" id="boxBack"><i class="fas fa-id-card-clip"></i><span>الوجه الخلفي *</span><input type="file" accept="image/*" onchange="upCard(this,'back')"></div>
+</div>
+<input type="hidden" id="dataFront"><input type="hidden" id="dataBack">
+</div>
+<div class="ferr" id="errCard"></div>
+<button class="authBtn" onclick="doRegister()"><i class="fas fa-user-plus"></i> تقديم طلب إنشاء حساب</button>
+<div class="authSw"><p>لديك حساب بالفعل؟</p><button class="authSwBtn" onclick="swF('login')"><i class="fas fa-sign-in-alt"></i> تسجيل الدخول</button></div>
+</div>
+</div>
+</div>
+
+<!-- تطبيق الأدمن -->
+<div class="ctn" id="appAdmin">
+<header>
+<div class="hdrB"><img id="hdrLogo" src="" style="display:none"><div><h2 id="hdrName">M2INFINITY</h2><span class="hdrR" id="hdrRole"></span></div></div>
+<div class="hdrA">
+<span class="lclk" id="admClk"></span>
+<div style="position:relative" id="nWrap">
+<button class="bIcon" onclick="tgND()"><i class="fas fa-bell"></i><span class="nBadge" id="nBdg" style="display:none">0</span></button>
+<div class="nDrop" id="nDrop">
+<div class="nDH"><h4><i class="fas fa-bell" style="color:var(--p)"></i> الإشعارات</h4><button onclick="readAll()"><i class="fas fa-check-double"></i> قراءة الكل</button></div>
+<div class="nFils" id="nFils"></div>
+<div class="nLst" id="nLst"></div>
+<div class="nDFt"><button onclick="opNFull()"><i class="fas fa-expand"></i> عرض الكل</button></div>
+</div>
+</div>
+<button class="bIcon" onclick="opPend()"><i class="fas fa-user-clock"></i><span class="nBadge" id="pBdg" style="display:none">0</span></button>
+<button class="bIcon" onclick="opAccM()"><i class="fas fa-user-shield"></i></button>
+<button class="bIcon" onclick="tgTheme()"><i class="fas fa-moon" id="thI"></i></button>
+<button class="bIcon" onclick="opSet()"><i class="fas fa-cog"></i></button>
+<button class="bIcon dng" onclick="doLogout()"><i class="fas fa-sign-out-alt"></i></button>
+</div>
+</header>
+<div class="wBan"><div><h2 id="wTxt">مرحباً بك</h2><p id="wSub">آخر دخول: —</p></div><div class="wT" id="wDate"></div></div>
+<div class="tabs" id="adminTabs">
+<button class="tBtn on" onclick="sTab('dash',this)"><i class="fas fa-chart-pie"></i> الرئيسية<span class="tDot"></span></button>
+<button class="tBtn" onclick="sTab('emps',this)"><i class="fas fa-users"></i> الموظفين<span class="tDot"></span></button>
+<button class="tBtn" onclick="sTab('att',this)"><i class="fas fa-fingerprint"></i> الحضور<span class="tDot"></span></button>
+<button class="tBtn" onclick="sTab('lv',this)"><i class="fas fa-calendar-alt"></i> الإجازات<span class="tDot"></span></button>
+<button class="tBtn" onclick="sTab('sal',this)"><i class="fas fa-money-bill-wave"></i> الرواتب<span class="tDot"></span></button>
+<button class="tBtn" onclick="sTab('rpt',this)"><i class="fas fa-file-alt"></i> التقارير<span class="tDot"></span></button>
+<button class="tBtn" onclick="sTab('nTab',this)"><i class="fas fa-bell"></i> الإشعارات<span class="tDot"></span></button>
+</div>
+<div id="dash" class="tCnt on"><div class="sGrid" id="sGrid"></div><div id="alrtArea"></div><div class="cGrid"><div class="cCard"><h3><i class="fas fa-chart-pie" style="color:var(--p)"></i> الحضور اليوم</h3><canvas id="chAtt"></canvas></div><div class="cCard"><h3><i class="fas fa-chart-bar" style="color:var(--ac)"></i> الرواتب</h3><canvas id="chSal"></canvas></div></div></div>
+<div id="emps" class="tCnt"><div class="tBar"><input type="text" id="sEmp" class="srch" placeholder="بحث..." oninput="ePg=1;rEmps()"><select class="fSel" id="fRole" onchange="ePg=1;rEmps()"><option value="">كل الصلاحيات</option><option value="Employee">موظف</option><option value="HR">موارد بشرية</option><option value="Manager">مدير</option></select><button class="bP" onclick="opEmpM()"><i class="fas fa-plus"></i> إضافة</button><button class="bP bS" onclick="exCSV('emp')"><i class="fas fa-file-excel"></i> تصدير</button></div><div class="tWrap"><table><thead><tr><th>الكود</th><th>الاسم</th><th>الوظيفة</th><th>الأساسي</th><th>الصلاحية</th><th>الإجراءات</th></tr></thead><tbody id="empTB"></tbody></table></div><div class="pag" id="empPg"></div></div>
+<div id="att" class="tCnt"><div class="attG">
+<div class="attC"><h3>GPS</h3><p>تسجيل بالموقع</p><select class="fSel" id="gSel" onchange="uAS('g')" style="width:100%;margin-bottom:6px"><option value="">-- اختر --</option></select><button class="bP" onclick="doGPS()" style="width:100%"><i class="fas fa-location-crosshairs"></i> تسجيل</button><div id="gSt" style="margin-top:5px;font-weight:700;font-size:10px"></div><div id="gCo" class="gCo"></div><div id="gAS" class="aSt no">اختر موظف</div></div>
+<div class="attC"><h3>QR Code</h3><p>اضغط الكود للتسجيل</p><select class="fSel" id="qSel" onchange="genQR()" style="width:100%;margin-bottom:6px"><option value="">-- اختر --</option></select><div id="qrBox" style="min-height:110px;display:flex;align-items:center;justify-content:center"></div><div id="qAS" class="aSt no">اختر موظف</div></div>
+<!-- ★★★ UPC بالزرارين: حضور + انصراف ★★★ -->
+<div class="attC"><h3>UPC</h3><p>أدخل كود الكارنيه</p><input type="text" id="upcIn" class="upc-scan-input" placeholder="أدخل كود UPC" maxlength="12"><div class="upc-btns"><button class="bS" onclick="doUPC('in')" style="color:#fff"><i class="fas fa-sign-in-alt"></i> حضور</button><button class="bW" onclick="doUPC('out')"><i class="fas fa-sign-out-alt"></i> انصراف</button></div><div id="upcSt" style="margin-top:5px;font-weight:700;font-size:10px"></div></div>
+<div class="attC"><h3>يدوي</h3><p>اختر وسجل</p><select class="fSel" id="mSel" onchange="uAS('m')" style="width:100%;margin-bottom:6px"><option value="">-- اختر --</option></select><div class="mBtns"><button class="bP bS" onclick="doMan('in')" style="flex:1"><i class="fas fa-sign-in-alt"></i> حضور</button><button class="bP bW" onclick="doMan('out')" style="flex:1"><i class="fas fa-sign-out-alt"></i> انصراف</button></div><div id="mAS" class="aSt no">اختر موظف</div></div>
+</div><div class="tBar"><input type="date" class="dIn" id="aDF" onchange="aPg=1;rAttL()"><h3 style="font-weight:700;flex:1;font-size:11px"><i class="fas fa-clipboard-list" style="color:var(--p)"></i> سجل الحضور</h3><button class="bP bS" onclick="exCSV('att')"><i class="fas fa-file-excel"></i> تصدير</button></div><div class="tWrap"><table><thead><tr><th>الموظف</th><th>الكود</th><th>حضور</th><th>طريقة</th><th>انصراف</th><th>طريقة</th><th>تأخير</th><th>الحالة</th></tr></thead><tbody id="attTB"></tbody></table></div><div class="pag" id="attPg"></div></div>
+<div id="lv" class="tCnt"><div class="tBar"><select class="fSel" id="lFS" onchange="lPg=1;rLvs()"><option value="">كل الحالات</option><option value="pending">معلّق</option><option value="approved">مقبول</option><option value="rejected">مرفوض</option></select><h3 style="font-weight:700;flex:1;font-size:11px"><i class="fas fa-calendar-alt" style="color:var(--ac)"></i> الإجازات</h3><button class="bP" onclick="opLvM()"><i class="fas fa-plus"></i> طلب</button><button class="bP bS" onclick="exCSV('lv')"><i class="fas fa-file-excel"></i> تصدير</button></div><div class="tWrap"><table><thead><tr><th>الموظف</th><th>النوع</th><th>من</th><th>إلى</th><th>الأيام</th><th>السبب</th><th>الحالة</th><th>الإجراءات</th></tr></thead><tbody id="lvTB"></tbody></table></div><div class="pag" id="lvPg"></div></div>
+<div id="sal" class="tCnt"><div class="tBar" style="margin-bottom:0"><select class="fSel" id="sMon" onchange="rSals()"></select><h3 style="font-weight:700;flex:1;font-size:11px"><i class="fas fa-money-bill-wave" style="color:var(--ac)"></i> الرواتب</h3><button class="bP bS" onclick="exCSV('sal')"><i class="fas fa-file-excel"></i> تصدير</button></div><div class="salSum" id="salSum" style="margin-top:10px"></div><div class="tWrap"><table><thead><tr><th>الموظف</th><th>الوظيفة</th><th>الأساسي</th><th>خصم تأخير</th><th>خصم يدوي</th><th>الصافي</th><th>إجراء</th></tr></thead><tbody id="salTB"></tbody></table></div></div>
+<div id="rpt" class="tCnt"><div class="cGrid" style="margin-bottom:18px"><div class="cCard"><h3><i class="fas fa-chart-line" style="color:var(--inf)"></i> الحضور آخر 7 أيام</h3><canvas id="chWk"></canvas></div><div class="cCard"><h3><i class="fas fa-chart-bar" style="color:var(--err)"></i> أكثر تأخيراً</h3><canvas id="chAb"></canvas></div></div><div class="sGrid"><div class="sCard"><div class="sIC" style="background:rgba(34,197,94,.1);color:var(--ok)"><i class="fas fa-percentage"></i></div><div class="sLab">نسبة الحضور</div><div class="sVal" id="rpAR">0%</div></div><div class="sCard"><div class="sIC" style="background:rgba(239,68,68,.1);color:var(--err)"><i class="fas fa-clock"></i></div><div class="sLab">دقائق التأخير</div><div class="sVal" id="rpLM">0</div></div><div class="sCard"><div class="sIC" style="background:rgba(245,158,11,.1);color:var(--ac)"><i class="fas fa-plane-departure"></i></div><div class="sLab">أيام الإجازة</div><div class="sVal" id="rpLD">0</div></div><div class="sCard"><div class="sIC" style="background:rgba(168,85,247,.1);color:#a855f7"><i class="fas fa-money-bill-wave"></i></div><div class="sLab">إجمالي الخصومات</div><div class="sVal" id="rpTD">0</div></div></div></div>
+<div id="nTab" class="tCnt"><div class="tBar"><select class="fSel" id="nTF" onchange="rNTab()"><option value="all">كل الإشعارات</option><option value="delay">تأخير</option><option value="absence">غياب</option><option value="salary">راتب</option><option value="leave">إجازة</option><option value="advance">سلفة</option><option value="login">تسجيل دخول</option></select><h3 style="font-weight:700;flex:1;font-size:11px"><i class="fas fa-bell" style="color:var(--p)"></i> سجل الإشعارات</h3><button class="bD" onclick="clrNots()"><i class="fas fa-trash"></i> مسح الكل</button></div><div id="nTL"></div></div>
+</div>
+
+<!-- تطبيق الموظف -->
+<div class="ctn" id="appEmp">
+<header>
+<div class="hdrB"><img id="eHLogo" src="" style="display:none"><div><h2 id="eHName">M2INFINITY</h2><span class="hdrR" id="eHRole"></span></div></div>
+<div class="hdrA">
+<span class="lclk" id="eClk"></span>
+<button class="bIcon" onclick="tgTheme()"><i class="fas fa-moon" id="thI2"></i></button>
+<button class="bIcon dng" onclick="doLogout()"><i class="fas fa-sign-out-alt"></i></button>
+</div>
+</header>
+<div class="empV">
+<div class="eInfoC" id="eInfoC"></div>
+<input type="file" id="ePhIn" accept="image/*" style="display:none">
+<div class="eTabs">
+<button class="eTBtn on" onclick="sET('eA',this)"><i class="fas fa-fingerprint"></i> الحضور</button>
+<button class="eTBtn" onclick="sET('eS',this)"><i class="fas fa-money-bill-wave"></i> مرتبي</button>
+<button class="eTBtn" onclick="sET('eL',this)"><i class="fas fa-calendar-alt"></i> إجازاتي</button>
+<button class="eTBtn" onclick="sET('eF',this)"><i class="fas fa-chart-line"></i> ملخص مالي</button>
+</div>
+<div id="eA" class="eTCnt on"><div class="eSec" id="eASec"></div></div>
+<div id="eS" class="eTCnt"><div id="eSSec"></div></div>
+<div id="eL" class="eTCnt"><div class="eSec" id="eLSec"></div></div>
+<div id="eF" class="eTCnt"><div class="eSec" id="eFSec"></div></div>
+</div>
+</div>
+
+<!-- المودالات -->
+<div class="mOvl" id="mEmp"><div class="mDlg"><div class="mHdr"><h3 id="mEmpT">إضافة موظف</h3><button class="mCls" onclick="cM('mEmp')"><i class="fas fa-times"></i></button></div><input type="hidden" id="eEId"><div id="eCDsp" class="codeDB" style="display:none"><span><i class="fas fa-fingerprint"></i> كود الموظف</span><strong id="eCV">------</strong></div><div class="fRow"><div class="fGrp"><label>الاسم</label><input type="text" class="fInp" id="eNm"></div><div class="fGrp"><label>الكود</label><input type="text" class="fInp" id="eCd" readonly></div></div><div class="fGrp"><label>الوظيفة</label><input type="text" class="fInp" id="eJb"></div><div class="fRow"><div class="fGrp"><label>الأساسي</label><input type="number" class="fInp" id="eBs" min="0"></div><div class="fGrp"><label>الصلاحية</label><select class="fInp" id="eRl"><option value="Employee">موظف</option><option value="HR">موارد بشرية</option><option value="Manager">مدير</option></select></div></div><div class="mAct"><button class="bP" onclick="svEmp()"><i class="fas fa-save"></i> حفظ</button><button class="bD" onclick="cM('mEmp')"><i class="fas fa-times"></i> إلغاء</button></div></div></div>
+<div class="mOvl" id="mCard"><div class="mDlg" style="width:400px"><div class="mHdr"><h3>كارنيه الموظف</h3><button class="mCls" onclick="cM('mCard')"><i class="fas fa-times"></i></button></div><div id="cardC"></div><div class="mAct"><button class="bP" onclick="prCard()"><i class="fas fa-print"></i> طباعة</button><button class="bD" onclick="cM('mCard')"><i class="fas fa-times"></i> إغلاق</button></div></div></div>
+<div class="mOvl" id="mDel"><div class="mDlg" style="width:360px;text-align:center"><div style="font-size:38px;color:var(--err);margin-bottom:10px"><i class="fas fa-exclamation-triangle"></i></div><h3>تأكيد الحذف</h3><p style="color:var(--mt);margin-bottom:16px;font-size:11px" id="delMsg"></p><div class="mAct"><button class="bD" onclick="cfDel()"><i class="fas fa-trash"></i> حذف</button><button class="bP" onclick="cM('mDel')"><i class="fas fa-times"></i> إلغاء</button></div></div></div>
+<div class="mOvl" id="mPend"><div class="mDlg" style="width:520px"><div class="mHdr"><h3><i class="fas fa-user-clock" style="color:var(--ac)"></i> حسابات معلّقة</h3><button class="mCls" onclick="cM('mPend')"><i class="fas fa-times"></i></button></div><div id="pList"></div><div class="mAct"><button class="bP" onclick="cM('mPend')"><i class="fas fa-check"></i> إغلاق</button></div></div></div>
+<div class="mOvl" id="mAcc"><div class="mDlg" style="width:600px"><div class="mHdr"><h3>إدارة الحسابات</h3><button class="mCls" onclick="cM('mAcc')"><i class="fas fa-times"></i></button></div><p style="font-size:10px;color:var(--mt);margin-bottom:10px"><i class="fas fa-info-circle" style="color:var(--inf)"></i> يمكنك تغيير اسم المستخدم أو كلمة السر لأي حساب. حساب المدير لا يظهر هنا.</p><div id="accList"></div><div class="mAct"><button class="bP" onclick="cM('mAcc')"><i class="fas fa-times"></i> إغلاق</button></div></div></div>
+<div class="mOvl" id="mChgPass"><div class="mDlg" style="width:400px"><div class="mHdr"><h3><i class="fas fa-key" style="color:var(--ac)"></i> تعديل الحساب</h3><button class="mCls" onclick="cM('mChgPass')"><i class="fas fa-times"></i></button></div><input type="hidden" id="cpIdx"><div class="fGrp"><label>اسم المستخدم</label><input type="text" class="fInp" id="cpUser" placeholder="اتركه فارغ لو مش عايز تغيّره"></div><div class="fGrp"><label>كلمة المرور الجديدة</label><input type="password" class="fInp" id="cpNew" placeholder="اتركها فارغة لو مش عايز تغيّرها"></div><div class="fGrp"><label>تأكيد كلمة المرور</label><input type="password" class="fInp" id="cpNew2" placeholder="أعد كتابة كلمة المرور"></div><div class="mAct"><button class="bP" onclick="svChgPass()"><i class="fas fa-save"></i> حفظ</button><button class="bD" onclick="cM('mChgPass')"><i class="fas fa-times"></i> إلغاء</button></div></div></div>
+<div class="mOvl" id="mLv"><div class="mDlg" style="width:460px"><div class="mHdr"><h3>طلب إجازة</h3><button class="mCls" onclick="cM('mLv')"><i class="fas fa-times"></i></button></div><div class="fRow"><div class="fGrp"><label>الموظف</label><select class="fInp" id="lvE"><option value="">-- اختر --</option></select></div><div class="fGrp"><label>النوع</label><select class="fInp" id="lvT"><option value="annual">اعتيادية</option><option value="sick">مرضية</option></select></div></div><div class="fRow"><div class="fGrp"><label>من</label><input type="date" class="fInp" id="lvS"></div><div class="fGrp"><label>إلى</label><input type="date" class="fInp" id="lvE2"></div></div><div class="fGrp"><label>السبب</label><textarea class="fInp" id="lvR" placeholder="اكتب السبب..."></textarea></div><div class="mAct"><button class="bP" onclick="svLv()"><i class="fas fa-save"></i> حفظ</button><button class="bD" onclick="cM('mLv')"><i class="fas fa-times"></i> إلغاء</button></div></div></div>
+<div class="mOvl" id="mDed"><div class="mDlg" style="width:380px"><div class="mHdr"><h3><i class="fas fa-minus-circle" style="color:var(--err)"></i> خصم يدوي</h3><button class="mCls" onclick="cM('mDed')"><i class="fas fa-times"></i></button></div><input type="hidden" id="dEId"><div class="fGrp"><label>المبلغ</label><input type="number" class="fInp" id="dAm" min="0"></div><div class="fGrp"><label>السبب</label><input type="text" class="fInp" id="dRs" placeholder="سبب الخصم"></div><div class="mAct"><button class="bD" onclick="svDed()"><i class="fas fa-save"></i> خصم</button><button class="bP" onclick="cM('mDed')"><i class="fas fa-times"></i> إلغاء</button></div></div></div>
+<div class="mOvl" id="mAdv"><div class="mDlg" style="width:400px"><div class="mHdr"><h3><i class="fas fa-hand-holding-usd" style="color:var(--ac)"></i> صرف سلفة</h3><button class="mCls" onclick="cM('mAdv')"><i class="fas fa-times"></i></button></div><input type="hidden" id="aEId"><div class="fGrp"><label>المبلغ</label><input type="number" class="fInp" id="aAm" min="0"></div><div class="fGrp"><label>السبب</label><input type="text" class="fInp" id="aRs" placeholder="سبب السلفة"></div><div class="mAct"><button class="bP bW" onclick="svAdv()"><i class="fas fa-save"></i> صرف</button><button class="bD" onclick="cM('mAdv')"><i class="fas fa-times"></i> إغلاق</button></div></div></div>
+<div class="mOvl" id="mSet"><div class="mDlg" style="width:520px;max-height:90vh;overflow-y:auto"><div class="mHdr"><h3><i class="fas fa-cog" style="color:var(--p)"></i> الإعدادات</h3><button class="mCls" onclick="cM('mSet')"><i class="fas fa-times"></i></button></div>
+<div class="setSec"><h4><i class="fas fa-building"></i> بيانات الشركة</h4><div class="fGrp"><label>اسم الشركة</label><input type="text" class="fInp" id="stCn" placeholder="M2INFINITY"></div><div class="fGrp"><label>شعار الشركة</label><div class="logoPV" id="logoPV" onclick="document.getElementById('logoIn').click()"><i class="fas fa-cloud-upload-alt"></i></div><input type="file" id="logoIn" accept="image/*" style="display:none" onchange="upLogo(this)"></div></div>
+<div class="setSec"><h4><i class="fas fa-clock"></i> إعدادات الحضور</h4><div class="fRow"><div class="fGrp"><label>بداية الدوام</label><input type="time" class="fInp" id="stWT" value="09:00"></div><div class="fGrp"><label>نهاية الدوام</label><input type="time" class="fInp" id="stWTE" value="17:00"></div></div><div class="fRow"><div class="fGrp"><label>خصم التأخير (لكل دقيقة)</label><input type="number" class="fInp" id="stDM" min="0" value="1"></div><div class="fGrp"><label>نسبة السلفة من الأساسي %</label><input type="number" class="fInp" id="stAP" min="0" max="100" value="50"></div></div></div>
+<div class="setSec"><h4><i class="fas fa-map-marker-alt"></i> إعدادات GPS</h4><div class="fRow"><div class="fGrp"><label>خط العرض للشركة</label><input type="number" step="any" class="fInp" id="stLat" placeholder="مثال: 30.0444"></div><div class="fGrp"><label>خط الطول للشركة</label><input type="number" step="any" class="fInp" id="stLng" placeholder="مثال: 31.2357"></div></div><div class="fGrp"><label>نصف قطر السماح (بالمتر)</label><input type="number" class="fInp" id="stGR" min="10" value="100" placeholder="مثال: 100 متر"></div><p style="font-size:9px;color:var(--mt);margin-top:4px"><i class="fas fa-info-circle" style="color:var(--inf)"></i> حدد إحداثيات مقر الشركة والمسافة المسموح بها للحضور بـ GPS.</p></div>
+<div class="setSec"><h4><i class="fas fa-user-shield"></i> حساب المدير</h4><div class="fGrp"><label>اسم المستخدم</label><input type="text" class="fInp" id="stAdmU" placeholder="admin"></div><div class="fGrp"><label>كلمة المرور الجديدة</label><input type="password" class="fInp" id="stAdmP" placeholder="اتركها فارغة لو مش عايز تغيّرها"></div><div class="fGrp"><label>تأكيد كلمة المرور</label><input type="password" class="fInp" id="stAdmP2" placeholder="أعد كتابة كلمة المرور"></div></div>
+<div class="mAct"><button class="bP" onclick="svSet()"><i class="fas fa-save"></i> حفظ الإعدادات</button><button class="bD" onclick="cM('mSet')"><i class="fas fa-times"></i> إغلاق</button></div>
+</div></div>
+<div class="mOvl" id="mNFull"><div class="mDlg" style="width:600px"><div class="mHdr"><h3><i class="fas fa-bell" style="color:var(--p)"></i> كل الإشعارات</h3><button class="mCls" onclick="cM('mNFull')"><i class="fas fa-times"></i></button></div><div id="nFullL"></div><div class="mAct"><button class="bP" onclick="cM('mNFull')"><i class="fas fa-check"></i> إغلاق</button></div></div></div>
+
+<div id="toastC"></div>
+
+<script>
+/* ===== بيانات أساسية ===== */
+const DEF_ACC=[{u:'admin',p:'admin',r:'admin',ei:null,ln:''}];
+const DEF_SET={cn:'M2INFINITY',logo:'',wt:'09:00',wte:'17:00',dm:1,ap:50,lat:'',lng:'',gr:100,au:'admin'};
+
+/* ===== Firebase — إعدادات المشروع ===== */
+const firebaseConfig = {
+  apiKey: "AIzaSyDir1qO80O-MYusI_6UPI8fjFUSXHY8w_s",
+  authDomain: "m2infinity-employee-system.firebaseapp.com",
+  databaseURL: "https://m2infinity-employee-system-default-rtdb.firebaseio.com",
+  projectId: "m2infinity-employee-system",
+  storageBucket: "m2infinity-employee-system.firebasestorage.app",
+  messagingSenderId: "899323519956",
+  appId: "1:899323519956:web:4191c80d3a60680d23ac41"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+/* قراءة من localStorage (كمخزن مؤقت) */
+function ld(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):JSON.parse(JSON.stringify(d))}catch(e){return JSON.parse(JSON.stringify(d))}}
+
+/* قراءة من Firebase — لو فيه إنترنت */
+async function ldFB(k,d){try{const snap=await firebase.database().ref('data/'+k).once('value');if(snap.exists()&&snap.val()!==null){const v=snap.val();localStorage.setItem(k,JSON.stringify(v));return v}}catch(e){console.warn('Firebase read err:',k)}return ld(k,d)}
+
+/* حفظ في Firebase + localStorage */
+function svLS(k,v){localStorage.setItem(k,JSON.stringify(v));try{firebase.database().ref('data/'+k).set(v)}catch(e){console.warn('Firebase write err:',k)}}
+
+/* المتغيرات — هتتملأ من Firebase */
+let ACC=ld('m2_acc',DEF_ACC);
+let SET=ld('m2_set',DEF_SET);
+let EMPS=ld('m2_emps',[]);
+let ATT=ld('m2_att',[]);
+let LVS=ld('m2_lvs',[]);
+let PND=ld('m2_pnd',[]);
+let NOTS=ld('m2_nots',[]);
+let DEDS=ld('m2_deds',[]);
+let ADVS=ld('m2_advs',[]);
+
+let curAcc=null,curEmp=null;
+let ePg=1,aPg=1,lPg=1;
+const PP=8;
+let chAttO,chSalO,chWkO,chAbO;
+let nDropOpen=false;
+
+/* جسيمات */
+(function(){const c=document.getElementById('aptc');for(let i=0;i<30;i++){const s=document.createElement('span');s.style.left=Math.random()*100+'%';s.style.animationDuration=(4+Math.random()*6)+'s';s.style.animationDelay=Math.random()*6+'s';c.appendChild(s)}})();
+
+/* Enter للدخول */
+document.getElementById('inpPass').addEventListener('keydown',function(e){if(e.key==='Enter')doLogin()});
+document.getElementById('inpUser').addEventListener('keydown',function(e){if(e.key==='Enter')document.getElementById('inpPass').focus()});
+document.getElementById('regPass2').addEventListener('keydown',function(e){if(e.key==='Enter')doRegister()});
+
+/* Enter في خانة UPC — بيسجل حضور بال默认 */
+document.getElementById('upcIn').addEventListener('keydown',function(e){if(e.key==='Enter')doUPC('in')});
+
+function swF(t){
+  document.getElementById('frmLogin').classList.toggle('on',t==='login');
+  document.getElementById('frmReg').classList.toggle('on',t==='reg');
+  ['errLogin','errUser','errPass','errCard'].forEach(id=>{const el=document.getElementById(id);el.classList.remove('on');el.textContent=''});
+}
+
+function upCard(inp,side){
+  const f=inp.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=function(e){
+    if(side==='front'){document.getElementById('dataFront').value=e.target.result;document.getElementById('boxFront').classList.add('done');document.getElementById('boxFront').innerHTML='<img src="'+e.target.result+'"><span>تم الرفع</span><input type="file" accept="image/*" onchange="upCard(this,\'front\')">'}
+    else{document.getElementById('dataBack').value=e.target.result;document.getElementById('boxBack').classList.add('done');document.getElementById('boxBack').innerHTML='<img src="'+e.target.result+'"><span>تم الرفع</span><input type="file" accept="image/*" onchange="upCard(this,\'back\')">'}
+  };r.readAsDataURL(f);
+}
+
+function genCode(){return String(Math.floor(100000+Math.random()*900000))}
+
+function doLogin(){
+  const u=document.getElementById('inpUser').value.trim();
+  const p=document.getElementById('inpPass').value;
+  const err=document.getElementById('errLogin');
+  if(!u||!p){err.textContent='أدخل اسم المستخدم وكلمة المرور';err.classList.add('on');return}
+  const acc=ACC.find(a=>a.u===u&&a.p===p);
+  if(!acc){err.textContent='اسم المستخدم أو كلمة المرور غير صحيحة';err.classList.add('on');return}
+  err.classList.remove('on');
+  if(acc.r!=='admin'&&!acc.ei){err.textContent='حسابك قيد المراجعة، انتظر موافقة المدير';err.classList.add('on');return}
+  curAcc=acc;acc.ln=new Date().toLocaleString('ar-EG');svLS('m2_acc',ACC);
+  document.getElementById('authScreen').style.display='none';
+  if(acc.r==='admin')initAdmin();else initEmp();
+  localStorage.setItem('m2_session',JSON.stringify({u:acc.u,p:acc.p}));
+}
+
+function doRegister(){
+  const nm=document.getElementById('regName').value.trim();
+  const jb=document.getElementById('regJob').value.trim();
+  const u=document.getElementById('regUser').value.trim();
+  const p=document.getElementById('regPass').value;
+  const p2=document.getElementById('regPass2').value;
+  const fr=document.getElementById('dataFront').value;
+  const bk=document.getElementById('dataBack').value;
+  let ok=true;
+  const eu=document.getElementById('errUser');const ep=document.getElementById('errPass');const ec=document.getElementById('errCard');
+  eu.classList.remove('on');ep.classList.remove('on');ec.classList.remove('on');
+  if(!nm||!jb||!u){eu.textContent='أكمل جميع الحقول';eu.classList.add('on');ok=false}
+  else if(ACC.find(a=>a.u===u)){eu.textContent='اسم المستخدم موجود بالفعل';eu.classList.add('on');ok=false}
+  if(!p||p.length<4){ep.textContent='كلمة المرور لازم 4 حروف على الأقل';ep.classList.add('on');ok=false}
+  else if(p!==p2){ep.textContent='كلمتا المرور غير متطابقتين';ep.classList.add('on');ok=false}
+  if(!fr||!bk){ec.textContent='ارفع صورة البطاقة (الوجهين)';ec.classList.add('on');ok=false}
+  if(!ok)return;
+  const code=genCode();
+  PND.push({nm,jb,u,p,code,fr,bk,dt:new Date().toLocaleString('ar-EG')});
+  svLS('m2_pnd',PND);toast('تم تقديم طلبك بنجاح، انتظر موافقة المدير','success');swF('login');
+  document.getElementById('regName').value='';document.getElementById('regJob').value='';document.getElementById('regUser').value='';document.getElementById('regPass').value='';document.getElementById('regPass2').value='';
+  document.getElementById('dataFront').value='';document.getElementById('dataBack').value='';
+  document.getElementById('boxFront').innerHTML='<i class="fas fa-id-card"></i><span>الوجه الأمامي *</span><input type="file" accept="image/*" onchange="upCard(this,\'front\')">';
+  document.getElementById('boxBack').innerHTML='<i class="fas fa-id-card-clip"></i><span>الوجه الخلفي *</span><input type="file" accept="image/*" onchange="upCard(this,\'back\')">';
+}
+
+function doLogout(){
+  curAcc=null;curEmp=null;localStorage.removeItem('m2_session');
+  document.getElementById('appAdmin').style.display='none';document.getElementById('appEmp').style.display='none';
+  document.getElementById('authScreen').style.display='flex';
+  document.getElementById('inpUser').value='';document.getElementById('inpPass').value='';document.getElementById('errLogin').classList.remove('on');
+  if(chAttO){chAttO.destroy();chAttO=null}if(chSalO){chSalO.destroy();chSalO=null}if(chWkO){chWkO.destroy();chWkO=null}if(chAbO){chAbO.destroy();chAbO=null}
+}
+
+function tgTheme(){
+  document.body.classList.toggle('dk');const dk=document.body.classList.contains('dk');localStorage.setItem('m2_th',dk?'dk':'lt');
+  const ic=document.getElementById('thI');if(ic)ic.className=dk?'fas fa-sun':'fas fa-moon';
+  const ic2=document.getElementById('thI2');if(ic2)ic2.className=dk?'fas fa-sun':'fas fa-moon';
+}
+(function(){if(localStorage.getItem('m2_th')==='dk'){document.body.classList.add('dk');const ic=document.getElementById('thI');if(ic)ic.className='fas fa-sun';const ic2=document.getElementById('thI2');if(ic2)ic2.className='fas fa-sun'}})();
+
+function upClk(){const n=new Date();const t=n.toLocaleTimeString('ar-EG',{hour:'2-digit',minute:'2-digit',second:'2-digit'});const el1=document.getElementById('admClk');if(el1)el1.textContent=t;const el2=document.getElementById('eClk');if(el2)el2.textContent=t}
+setInterval(upClk,1000);upClk();
+
+function toast(msg,type='info'){const c=document.getElementById('toastC');const d=document.createElement('div');d.className='toast '+type;const icons={success:'fa-check-circle',error:'fa-times-circle',warning:'fa-exclamation-triangle',info:'fa-info-circle'};d.innerHTML='<i class="fas '+(icons[type]||icons.info)+'"></i> '+msg;c.appendChild(d);setTimeout(()=>d.remove(),3500)}
+
+function oM(id){document.getElementById(id).classList.add('on')}
+function cM(id){document.getElementById(id).classList.remove('on')}
+
+function sTab(id,btn){
+  document.querySelectorAll('#appAdmin .tCnt').forEach(t=>t.classList.remove('on'));document.getElementById(id).classList.add('on');
+  document.querySelectorAll('#adminTabs .tBtn').forEach(b=>b.classList.remove('on'));if(btn)btn.classList.add('on');
+  if(btn)btn.classList.remove('hasN');
+  if(id==='dash')rDash();if(id==='emps')rEmps();if(id==='att'){rAttL();fillAttSels()}if(id==='lv')rLvs();if(id==='sal'){fillSalMon();rSals()}if(id==='rpt')rRpt();if(id==='nTab')rNTab();
+}
+
+function sET(id,btn){
+  document.querySelectorAll('.eTCnt').forEach(t=>t.classList.remove('on'));document.getElementById(id).classList.add('on');
+  document.querySelectorAll('.eTBtn').forEach(b=>b.classList.remove('on'));if(btn)btn.classList.add('on');
+  if(id==='eA')rEmpAtt();if(id==='eS')rEmpSal();if(id==='eL')rEmpLv();if(id==='eF')rEmpFin();
+}
+
+function initAdmin(){
+  document.getElementById('appAdmin').style.display='block';document.getElementById('appEmp').style.display='none';
+  document.getElementById('hdrName').textContent=SET.cn||'M2INFINITY';document.getElementById('hdrRole').textContent='مدير النظام';
+  if(SET.logo){const l=document.getElementById('hdrLogo');l.src=SET.logo;l.style.display='block'}
+  document.getElementById('wTxt').textContent='مرحباً بك يا مدير النظام';document.getElementById('wSub').textContent='آخر دخول: '+(curAcc.ln||'—');
+  const d=new Date();document.getElementById('wDate').textContent=d.toLocaleDateString('ar-EG',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  document.getElementById('aDF').value=d.toISOString().split('T')[0];
+  rDash();upNBdg();upPBdg();
+}
+
+function initEmp(){
+  document.getElementById('appEmp').style.display='block';document.getElementById('appAdmin').style.display='none';
+  curEmp=EMPS.find(e=>e.id===curAcc.ei);
+  if(!curEmp){toast('لم يتم العثور على بيانات الموظف','error');doLogout();return}
+  document.getElementById('eHName').textContent=SET.cn||'M2INFINITY';
+  const rlMap={Employee:'موظف',HR:'موارد بشرية',Manager:'مدير'};document.getElementById('eHRole').textContent=rlMap[curEmp.role]||'موظف';
+  if(SET.logo){const l=document.getElementById('eHLogo');l.src=SET.logo;l.style.display='block'}
+  rEmpInfo();rEmpAtt();
+}
+
+function rEmpInfo(){
+  if(!curEmp)return;const ini=curEmp.name.split(' ').map(w=>w[0]).join('').substring(0,2);
+  let avH='<div class="eAvB">'+ini+'</div>';if(curEmp.photo)avH='<img src="'+curEmp.photo+'">';
+  document.getElementById('eInfoC').innerHTML='<div class="eAvW" onclick="document.getElementById(\'ePhIn\').click()">'+avH+'<div class="eOv"><i class="fas fa-camera" style="color:#fff;font-size:20px"></i></div></div><h2>'+curEmp.name+'</h2><p class="jT">'+curEmp.job+' — كود: '+curEmp.code+'</p>';
+  document.getElementById('ePhIn').onchange=function(f){const file=f.target.files[0];if(!file)return;const rd=new FileReader();rd.onload=function(ev){curEmp.photo=ev.target.result;svLS('m2_emps',EMPS);rEmpInfo();toast('تم تحديث الصورة','success')};rd.readAsDataURL(file)};
+}
+
+function rDash(){
+  const today=new Date().toISOString().split('T')[0];const todayAtt=ATT.filter(a=>a.date===today);
+  const present=todayAtt.filter(a=>a.ci).length;const late=todayAtt.filter(a=>a.delay>0).length;const absent=EMPS.length-present;
+  const totalSal=EMPS.reduce((s,e)=>s+(e.salary||0),0);const pendCnt=PND.length;
+  document.getElementById('sGrid').innerHTML=[
+    {i:'fa-users',l:'إجمالي الموظفين',v:EMPS.length},{i:'fa-check-circle',l:'حاضرين اليوم',v:present},
+    {i:'fa-times-circle',l:'غائبين اليوم',v:absent},{i:'fa-clock',l:'متأخرين',v:late},
+    {i:'fa-user-clock',l:'طلبات معلقة',v:pendCnt},{i:'fa-money-bill-wave',l:'إجمالي الرواتب',v:fmtM(totalSal)}
+  ].map((s,i)=>'<div class="sCard"><div class="sIC"><i class="fas '+s.i+'"></i></div><div class="sLab">'+s.l+'</div><div class="sVal">'+s.v+'</div></div>').join('');
+  let alrt='';
+  if(late>0)alrt+='<div class="dlyA"><i class="fas fa-clock"></i><div class="dTx"><strong>'+late+' موظف متأخر اليوم</strong><p>يرجى المتابعة</p></div></div>';
+  if(absent>0)alrt+='<div class="alrt"><i class="fas fa-exclamation-circle"></i><div class="aTx"><strong>'+absent+' موظف غائب اليوم</strong><p>لم يسجّلوا حضوراً بعد</p></div></div>';
+  if(pendCnt>0)alrt+='<div class="dlyA"><i class="fas fa-user-clock"></i><div class="dTx"><strong>'+pendCnt+' طلب إنشاء حساب معلّق</strong><p>راجع الطلبات من زر الحسابات المعلقة</p></div></div>';
+  document.getElementById('alrtArea').innerHTML=alrt;rDashCharts(todayAtt);
+}
+
+function rDashCharts(todayAtt){
+  const ctx1=document.getElementById('chAtt');if(!ctx1)return;
+  const p=todayAtt.filter(a=>a.ci&&!a.co).length;const c=todayAtt.filter(a=>a.ci&&a.co).length;const l=todayAtt.filter(a=>a.delay>0).length;const ab=EMPS.length-todayAtt.filter(a=>a.ci).length;
+  if(chAttO)chAttO.destroy();
+  chAttO=new Chart(ctx1,{type:'doughnut',data:{labels:['اكتمل','حاضر لم يخرج','متأخر','غائب'],datasets:[{data:[c,p,l,ab],backgroundColor:['#22c55e','#06b6d4','#f59e0b','#ef4444'],borderWidth:0}]},options:{responsive:true,plugins:{legend:{position:'bottom',labels:{font:{family:'Cairo',size:10}}}}}});
+  const ctx2=document.getElementById('chSal');if(chSalO)chSalO.destroy();
+  chSalO=new Chart(ctx2,{type:'bar',data:{labels:EMPS.slice(0,8).map(e=>e.name.split(' ')[0]),datasets:[{label:'الراتب',data:EMPS.slice(0,8).map(e=>e.salary||0),backgroundColor:'rgba(13,148,136,.7)',borderRadius:6}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{font:{family:'Cairo',size:9}}},x:{ticks:{font:{family:'Cairo',size:9}}}}}});
+}
+
+function rEmps(){
+  const q=document.getElementById('sEmp').value.trim().toLowerCase();const rl=document.getElementById('fRole').value;
+  let list=EMPS.filter(e=>{if(q&&!e.name.toLowerCase().includes(q)&&!e.code.includes(q))return false;if(rl&&e.role!==rl)return false;return true});
+  const tot=list.length;const pages=Math.ceil(tot/PP)||1;if(ePg>pages)ePg=pages;list=list.slice((ePg-1)*PP,ePg*PP);
+  const rlMap={Employee:'موظف',HR:'موارد بشرية',Manager:'مدير'};
+  document.getElementById('empTB').innerHTML=list.length?list.map(e=>'<tr><td><code style="background:var(--bg2);padding:2px 6px;border-radius:4px;font-size:9px">'+e.code+'</code></td><td>'+(e.photo?'<img src="'+e.photo+'" style="width:22px;height:22px;border-radius:50%;vertical-align:middle;margin-left:4px">':'')+e.name+'</td><td>'+e.job+'</td><td>'+fmtM(e.salary)+'</td><td><span class="lBdg approved">'+(rlMap[e.role]||e.role)+'</span></td><td><div class="actCell"><button class="bSm bP" onclick="edEmp(\''+e.id+'\')"><i class="fas fa-edit"></i></button><button class="bSm bI" onclick="vwCard(\''+e.id+'\')"><i class="fas fa-id-card"></i></button><button class="bSm bD" onclick="dlEmp(\''+e.id+'\')"><i class="fas fa-trash"></i></button></div></td></tr>').join(''):'<tr><td colspan="6"><div class="emSt"><i class="fas fa-users"></i>لا يوجد موظفين</div></td></tr>';
+  let pgH='';if(pages>1){pgH+='<button '+(ePg<=1?'disabled':'')+' onclick="ePg--;rEmps()"><i class="fas fa-chevron-right"></i></button>';for(let i=1;i<=pages;i++)pgH+='<button class="'+(i===ePg?'on':'')+'" onclick="ePg='+i+';rEmps()">'+i+'</button>';pgH+='<button '+(ePg>=pages?'disabled':'')+' onclick="ePg++;rEmps()"><i class="fas fa-chevron-left"></i></button>'}
+  document.getElementById('empPg').innerHTML=pgH;
+}
+
+function opEmpM(editId){
+  document.getElementById('eEId').value='';document.getElementById('eNm').value='';document.getElementById('eCd').value='';document.getElementById('eJb').value='';document.getElementById('eBs').value='';document.getElementById('eRl').value='Employee';
+  document.getElementById('eCDsp').style.display='none';document.getElementById('mEmpT').textContent='إضافة موظف';
+  if(editId){const e=EMPS.find(x=>x.id===editId);if(!e)return;document.getElementById('eEId').value=e.id;document.getElementById('eNm').value=e.name;document.getElementById('eCd').value=e.code;document.getElementById('eJb').value=e.job;document.getElementById('eBs').value=e.salary||0;document.getElementById('eRl').value=e.role;document.getElementById('mEmpT').textContent='تعديل موظف'}
+  else{document.getElementById('eCd').value=genCode();document.getElementById('eCDsp').style.display='block';document.getElementById('eCV').textContent=document.getElementById('eCd').value}
+  oM('mEmp');
+}
+function edEmp(id){opEmpM(id)}
+
+function svEmp(){
+  const id=document.getElementById('eEId').value;const nm=document.getElementById('eNm').value.trim();const cd=document.getElementById('eCd').value.trim();const jb=document.getElementById('eJb').value.trim();const bs=parseFloat(document.getElementById('eBs').value)||0;const rl=document.getElementById('eRl').value;
+  if(!nm||!jb){toast('أكمل الاسم والوظيفة','error');return}
+  if(id){const e=EMPS.find(x=>x.id===id);if(e){e.name=nm;e.job=jb;e.salary=bs;e.role=rl}}
+  else{if(!cd){toast('الكود مطلوب','error');return}EMPS.push({id:'e'+Date.now(),name:nm,code:cd,job:jb,salary:bs,role:rl,photo:'',cardFront:'',cardBack:''})}
+  svLS('m2_emps',EMPS);cM('mEmp');rEmps();toast('تم الحفظ','success');
+}
+
+function dlEmp(id){const e=EMPS.find(x=>x.id===id);if(!e)return;document.getElementById('delMsg').textContent='هل تريد حذف الموظف "'+e.name+'"؟';document.getElementById('mDel').dataset.eid=id;oM('mDel')}
+function cfDel(){
+  const id=document.getElementById('mDel').dataset.eid;EMPS=EMPS.filter(e=>e.id!==id);ATT=ATT.filter(a=>a.eid!==id);LVS=LVS.filter(l=>l.eid!==id);DEDS=DEDS.filter(d=>d.eid!==id);ADVS=ADVS.filter(a=>a.eid!==id);ACC=ACC.filter(a=>a.ei!==id);
+  svLS('m2_emps',EMPS);svLS('m2_att',ATT);svLS('m2_lvs',LVS);svLS('m2_deds',DEDS);svLS('m2_advs',ADVS);svLS('m2_acc',ACC);cM('mDel');rEmps();toast('تم الحذف','success');
+}
+
+function vwCard(id){
+  const e=EMPS.find(x=>x.id===id);if(!e)return;const ini=e.name.split(' ').map(w=>w[0]).join('').substring(0,2);
+  let avH='<span style="font-size:20px;font-weight:900;color:#0d9488">'+ini+'</span>';if(e.photo)avH='<img src="'+e.photo+'">';
+  let logoH='';if(SET.logo)logoH='<img src="'+SET.logo+'" alt="logo">';
+  document.getElementById('cardC').innerHTML='<div class="cardPV" id="cardPVInner"><div class="cardHB">'+logoH+'<span class="cCN">'+(SET.cn||'M2INFINITY')+'</span></div><div class="cardAV">'+avH+'</div><div class="cardBD"><h3>'+e.name+'</h3><p class="cJB">'+e.job+'</p><div style="margin:10px 0"><svg id="cardBarcode"></svg></div><div class="cIR"><span>الكود</span><span>'+e.code+'</span></div><div class="cIR"><span>الصلاحية</span><span>'+e.role+'</span></div></div></div>';
+  oM('mCard');setTimeout(()=>{try{JsBarcode('#cardBarcode',e.code,{format:'CODE128',width:1.5,height:40,displayValue:false,margin:0})}catch(ex){}},100);
+}
+
+function prCard(){const c=document.getElementById('cardPVInner');if(!c)return;const w=window.open('','','width=400,height=500');w.document.write('<html><head><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet"><script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"><\/script><style>body{margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh;font-family:Cairo,sans-serif}*{margin:0;padding:0;box-sizing:border-box}</style></head><body>'+c.outerHTML+'<script>try{JsBarcode("#cardBarcode",document.querySelector("#cardBarcode").dataset.value||"000000",{format:"CODE128",width:1.5,height:40,displayValue:false,margin:0})}catch(e){}setTimeout(()=>window.print(),300)<\/script></body></html>')}
+
+function upPBdg(){const b=document.getElementById('pBdg');if(PND.length>0){b.style.display='flex';b.textContent=PND.length}else{b.style.display='none'}}
+
+function opPend(){
+  if(!PND.length){document.getElementById('pList').innerHTML='<div class="emSt"><i class="fas fa-user-check"></i>لا توجد طلبات معلقة</div>';oM('mPend');return}
+  document.getElementById('pList').innerHTML=PND.map((p,i)=>'<div class="pndC"><div class="pndAv">'+p.nm.split(' ').map(w=>w[0]).join('').substring(0,2)+'</div><div class="pndInf"><h4>'+p.nm+'</h4><p>'+p.job+' — '+p.u+' — كود: '+p.code+'</p><p style="margin-top:2px;font-size:8px;color:var(--inf)">'+p.dt+'</p></div><div class="pndAct"><button class="pOk" onclick="accPend('+i+',true)"><i class="fas fa-check"></i> قبول</button><button class="pNo" onclick="accPend('+i+',false)"><i class="fas fa-times"></i> رفض</button></div></div>').join('');
+  oM('mPend');
+}
+
+function accPend(idx,ok){
+  const p=PND[idx];if(!p)return;
+  if(ok){const eid='e'+Date.now();EMPS.push({id:eid,name:p.nm,code:p.code,job:p.job,salary:0,role:'Employee',photo:'',cardFront:p.fr,cardBack:p.bk});ACC.push({u:p.u,p:p.p,r:'employee',ei:eid,ln:''});addNot('تم قبول حساب الموظف: '+p.nm,'login');toast('تم قبول '+p.nm,'success')}
+  else{toast('تم رفض طلب '+p.nm,'warning')}
+  PND.splice(idx,1);svLS('m2_pnd',PND);svLS('m2_emps',EMPS);svLS('m2_acc',ACC);upPBdg();opPend();
+}
+
+function opAccM(){
+  const nonAdmin=ACC.filter(a=>a.r!=='admin');
+  if(!nonAdmin.length){document.getElementById('accList').innerHTML='<div class="emSt"><i class="fas fa-user-shield"></i>لا توجد حسابات أخرى</div>';oM('mAcc');return}
+  const rlMap={admin:'مدير نظام',hr:'موارد بشرية',employee:'موظف'};
+  document.getElementById('accList').innerHTML=nonAdmin.map(a=>{const emp=EMPS.find(e=>e.id===a.ei);const nm=emp?emp.name:'غير مرتبط';const rl=rlMap[a.r]||a.r;return '<div class="accRow"><div class="pndAv" style="background:linear-gradient(135deg,var(--p),var(--inf))">'+nm.split(' ').map(w=>w[0]).join('').substring(0,2)+'</div><div class="accInf"><h4>'+nm+'</h4><p>المستخدم: '+a.u+' — '+rl+(a.ln?' — آخر دخول: '+a.ln:'')+'</p></div><div class="accAct"><button class="bSm bW" onclick="opChgPass('+ACC.indexOf(a)+')"><i class="fas fa-key"></i> تعديل</button></div></div>'}).join('');
+  oM('mAcc');
+}
+
+function opChgPass(accIdx){const a=ACC[accIdx];if(!a)return;document.getElementById('cpIdx').value=accIdx;document.getElementById('cpUser').value=a.u;document.getElementById('cpNew').value='';document.getElementById('cpNew2').value='';oM('mChgPass')}
+
+function svChgPass(){
+  const idx=parseInt(document.getElementById('cpIdx').value);const newUser=document.getElementById('cpUser').value.trim();const np=document.getElementById('cpNew').value;const np2=document.getElementById('cpNew2').value;const a=ACC[idx];if(!a)return;
+  if(newUser&&newUser!==a.u){if(ACC.some((x,i)=>i!==idx&&x.u===newUser)){toast('اسم المستخدم موجود بالفعل','error');return}a.u=newUser}
+  if(np){if(np.length<4){toast('كلمة المرور لازم 4 حروف على الأقل','error');return}if(np!==np2){toast('كلمتا المرور غير متطابقتين','error');return}a.p=np}
+  if(!newUser&&!np){toast('لم يتم تغيير شيء','warning');return}
+  svLS('m2_acc',ACC);cM('mChgPass');toast('تم تحديث الحساب','success');if(a.r!=='admin')opAccM();
+}
+
+/* ===== الإشعارات ===== */
+function addNot(msg,type='info'){NOTS.unshift({m:msg,t:type,d:new Date().toLocaleString('ar-EG'),r:false,id:Date.now()});if(NOTS.length>200)NOTS=NOTS.slice(0,200);svLS('m2_nots',NOTS);upNBdg();const nTab=document.querySelector('#adminTabs .tBtn:nth-child(7)');if(nTab)nTab.classList.add('hasN')}
+function upNBdg(){const unr=NOTS.filter(n=>!n.r).length;const b=document.getElementById('nBdg');if(unr>0){b.style.display='flex';b.textContent=unr}else{b.style.display='none'}}
+
+function tgND(){nDropOpen=!nDropOpen;document.getElementById('nDrop').classList.toggle('on',nDropOpen);if(nDropOpen)rNDrop()}
+document.addEventListener('click',function(e){const wrap=document.getElementById('nWrap');if(wrap&&nDropOpen&&!wrap.contains(e.target)){nDropOpen=false;document.getElementById('nDrop').classList.remove('on')}});
+
+function rNDrop(){
+  const fils=document.getElementById('nFils');const types=['all','delay','absence','salary','leave','advance','login'];const tMap={all:'الكل',delay:'تأخير',absence:'غياب',salary:'راتب',leave:'إجازة',advance:'سلفة',login:'دخول'};
+  fils.innerHTML=types.map(t=>'<button class="nFB'+(t==='all'?' on':'')+'" onclick="filtNDrop(\''+t+'\',this)">'+tMap[t]+'</button>').join('');renderNDrop('all');
+}
+function filtNDrop(type,btn){document.querySelectorAll('.nFB').forEach(b=>b.classList.remove('on'));if(btn)btn.classList.add('on');renderNDrop(type)}
+function renderNDrop(type){
+  const lst=document.getElementById('nLst');let list=NOTS.slice(0,20);if(type!=='all')list=list.filter(n=>n.t===type);
+  if(!list.length){lst.innerHTML='<div class="nEm"><i class="fas fa-bell-slash"></i>لا إشعارات</div>';return}
+  const icMap={delay:'fa-clock',absence:'fa-user-times',salary:'fa-money-bill',leave:'fa-calendar-minus',advance:'fa-hand-holding-usd',login:'fa-sign-in-alt'};
+  const clMap={delay:'var(--ac)',absence:'var(--err)',salary:'var(--ok)',leave:'var(--inf)',advance:'var(--ac)',login:'var(--p)'};
+  lst.innerHTML=list.map(n=>{const ic=icMap[n.t]||'fa-bell';const cl=clMap[n.t]||'var(--p)';return '<div class="nIt'+(n.r?'':' ur')+'"><div class="nIC" style="background:'+cl+'22;color:'+cl+'"><i class="fas '+ic+'"></i></div><div class="nBD"><div class="nM">'+n.m+'</div><div class="nT">'+n.d+'</div></div></div>'}).join('');
+}
+function readAll(){NOTS.forEach(n=>n.r=true);svLS('m2_nots',NOTS);upNBdg();rNDrop();const nTab=document.querySelector('#adminTabs .tBtn:nth-child(7)');if(nTab)nTab.classList.remove('hasN')}
+
+function opNFull(){
+  nDropOpen=false;document.getElementById('nDrop').classList.remove('on');
+  const type=document.getElementById('nTF').value;let list=NOTS;if(type!=='all')list=list.filter(n=>n.t===type);
+  if(!list.length){document.getElementById('nFullL').innerHTML='<div class="emSt"><i class="fas fa-bell-slash"></i>لا إشعارات</div>';oM('mNFull');return}
+  const icMap={delay:'fa-clock',absence:'fa-user-times',salary:'fa-money-bill',leave:'fa-calendar-minus',advance:'fa-hand-holding-usd',login:'fa-sign-in-alt'};
+  const clMap={delay:'var(--ac)',absence:'var(--err)',salary:'var(--ok)',leave:'var(--inf)',advance:'var(--ac)',login:'var(--p)'};
+  document.getElementById('nFullL').innerHTML='<div class="nmLst">'+list.map(n=>{const ic=icMap[n.t]||'fa-bell';const cl=clMap[n.t]||'var(--p)';return '<div class="nmIt'+(n.r?'':' ur')+'"><div class="nmIC" style="background:'+cl+'22;color:'+cl+'"><i class="fas '+ic+'"></i></div><div class="nmBD"><div class="nmM">'+n.m+'</div><div class="nmMt"><span>'+n.d+'</span><span style="color:'+cl+'">'+n.t+'</span></div></div></div>'}).join('')+'</div>';
+  oM('mNFull');
+}
+
+function rNTab(){
+  const type=document.getElementById('nTF').value;let list=NOTS;if(type!=='all')list=list.filter(n=>n.t===type);
+  list.forEach(n=>n.r=true);svLS('m2_nots',NOTS);upNBdg();const nTab=document.querySelector('#adminTabs .tBtn:nth-child(7)');if(nTab)nTab.classList.remove('hasN');
+  if(!list.length){document.getElementById('nTL').innerHTML='<div class="emSt"><i class="fas fa-bell-slash"></i>لا إشعارات</div>';return}
+  const icMap={delay:'fa-clock',absence:'fa-user-times',salary:'fa-money-bill',leave:'fa-calendar-minus',advance:'fa-hand-holding-usd',login:'fa-sign-in-alt'};
+  const clMap={delay:'var(--ac)',absence:'var(--err)',salary:'var(--ok)',leave:'var(--inf)',advance:'var(--ac)',login:'var(--p)'};
+  document.getElementById('nTL').innerHTML='<div class="nmLst">'+list.map(n=>{const ic=icMap[n.t]||'fa-bell';const cl=clMap[n.t]||'var(--p)';return '<div class="nmIt"><div class="nmIC" style="background:'+cl+'22;color:'+cl+'"><i class="fas '+ic+'"></i></div><div class="nmBD"><div class="nmM">'+n.m+'</div><div class="nmMt"><span>'+n.d+'</span></div></div></div>'}).join('')+'</div>';
+}
+function clrNots(){NOTS=[];svLS('m2_nots',NOTS);upNBdg();rNTab();toast('تم مسح كل الإشعارات','success');const nTab=document.querySelector('#adminTabs .tBtn:nth-child(7)');if(nTab)nTab.classList.remove('hasN')}
+
+/* ===== الحضور ===== */
+function fillAttSels(){const opts=EMPS.map(e=>'<option value="'+e.id+'">'+e.name+' ('+e.code+')</option>').join('');['gSel','qSel','mSel'].forEach(id=>{const el=document.getElementById(id);el.innerHTML='<option value="">-- اختر --</option>'+opts})}
+
+function uAS(type){const sel=type==='g'?document.getElementById('gSel'):document.getElementById('mSel');const st=type==='g'?document.getElementById('gAS'):document.getElementById('mAS');if(sel.value){st.className='aSt ci';st.textContent='جاهز للتسجيل'}else{st.className='aSt no';st.textContent='اختر موظف'}}
+
+function doGPS(){
+  const eid=document.getElementById('gSel').value;if(!eid){toast('اختر موظف','error');return}
+  if(!SET.lat||!SET.lng){toast('حدد إحداثيات الشركة في الإعدادات أولاً','error');return}
+  if(!navigator.geolocation){toast('المتصفح لا يدعم GPS','error');return}
+  document.getElementById('gSt').textContent='جاري تحديد الموقع...';document.getElementById('gSt').style.color='var(--inf)';
+  navigator.geolocation.getCurrentPosition(function(pos){
+    const lat=pos.coords.latitude;const lng=pos.coords.longitude;const dist=getDist(lat,lng,parseFloat(SET.lat),parseFloat(SET.lng));
+    document.getElementById('gCo').textContent='مسافتك: '+Math.round(dist)+' متر';const maxR=parseFloat(SET.gr)||100;
+    if(dist>maxR){document.getElementById('gSt').textContent='بعيد عن الشركة ('+Math.round(dist)+'م > '+maxR+'م)';document.getElementById('gSt').style.color='var(--err)';addNot('محاولة حضور GPS مرفوضة — مسافة '+Math.round(dist)+'م','absence');return}
+    regAtt(eid,'gps',lat+','+lng);document.getElementById('gSt').textContent='تم التسجيل بنجاح';document.getElementById('gSt').style.color='var(--ok)';
+  },function(err){document.getElementById('gSt').textContent='خطأ في تحديد الموقع';document.getElementById('gSt').style.color='var(--err)';toast('تعذر تحديد الموقع','error')},{enableHighAccuracy:true});
+}
+
+function getDist(lat1,lon1,lat2,lon2){const R=6371000;const dLat=(lat2-lat1)*Math.PI/180;const dLon=(lon2-lon1)*Math.PI/180;const a=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)*Math.sin(dLon/2);return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a))}
+
+function genQR(){
+  const eid=document.getElementById('qSel').value;const box=document.getElementById('qrBox');const st=document.getElementById('qAS');
+  if(!eid){box.innerHTML='';st.className='aSt no';st.textContent='اختر موظف';return}
+  const emp=EMPS.find(e=>e.id===eid);if(!emp)return;
+  box.innerHTML='';st.className='aSt ci';st.textContent='اضغط الكود أو سجّل يدوي';
+  new QRCode(box,{text:emp.code,width:100,height:100,colorDark:'#0d9488',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.H});
+  box.style.cursor='pointer';box.onclick=function(){regAtt(eid,'qr','');toast('تم تسجيل حضور '+emp.name,'success')};
+}
+
+/* ★★★ UPC بالزرارين — حضور / انصراف ★★★ */
+function doUPC(type){
+  const code=document.getElementById('upcIn').value.trim();
+  const st=document.getElementById('upcSt');
+  if(!code){toast('أدخل كود UPC','error');return}
+  const emp=EMPS.find(e=>e.code===code);
+  if(!emp){st.textContent='كود غير موجود!';st.style.color='var(--err)';return}
+
+  if(type==='in'){
+    /* تسجيل حضور */
+    const today=new Date().toISOString().split('T')[0];
+    const existing=ATT.find(a=>a.eid===emp.id&&a.date===today);
+    if(existing&&existing.ci){st.textContent='مسجل حضور بالفعل اليوم!';st.style.color='var(--ac)';return}
+    regAtt(emp.id,'upc',code);
+    st.textContent='حضور: '+emp.name;st.style.color='var(--ok)';
+  }else{
+    /* تسجيل انصراف */
+    const today=new Date().toISOString().split('T')[0];
+    const existing=ATT.find(a=>a.eid===emp.id&&a.date===today);
+    if(!existing||!existing.ci){st.textContent='لم يسجل حضور بعد!';st.style.color='var(--err)';return}
+    if(existing.co){st.textContent='مسجل انصراف بالفعل!';st.style.color='var(--ac)';return}
+    regAttOut(emp.id,'upc',code);
+    st.textContent='انصراف: '+emp.name;st.style.color='var(--inf)';
+  }
+  document.getElementById('upcIn').value='';
+}
+
+function doMan(type){
+  const eid=document.getElementById('mSel').value;if(!eid){toast('اختر موظف','error');return}
+  const emp=EMPS.find(e=>e.id===eid);
+  if(type==='in'){regAtt(eid,'manual','');toast('تم تسجيل حضور '+emp.name,'success')}
+  else{regAttOut(eid,'manual','');toast('تم تسجيل انصراف '+emp.name,'success')}
+}
+
+function regAtt(eid,method,extra){
+  const today=new Date().toISOString().split('T')[0];const now=new Date();const time=now.toLocaleTimeString('ar-EG',{hour:'2-digit',minute:'2-digit'});
+  let rec=ATT.find(a=>a.eid===eid&&a.date===today);
+  if(!rec){
+    rec={eid,date:today,ci:time,ciM:method,ciX:extra,co:'',coM:'',coX:'',delay:0};
+    if(SET.wt){const [wh,wm]=SET.wt.split(':').map(Number);const wt=new Date();wt.setHours(wh,wm,0,0);const diff=now-wt;if(diff>0)rec.delay=Math.floor(diff/60000)}
+    ATT.push(rec);if(rec.delay>0)addNot('تأخير: '+getEmpName(eid)+' — '+rec.delay+' دقيقة','delay');
+  }else if(!rec.co){rec.co=time;rec.coM=method;rec.coX=extra}
+  svLS('m2_att',ATT);
+}
+
+function regAttOut(eid,method,extra){
+  const today=new Date().toISOString().split('T')[0];const time=new Date().toLocaleTimeString('ar-EG',{hour:'2-digit',minute:'2-digit'});
+  const rec=ATT.find(a=>a.eid===eid&&a.date===today);if(rec){rec.co=time;rec.coM=method;rec.coX=extra;svLS('m2_att',ATT)}
+}
+
+function rAttL(){
+  const date=document.getElementById('aDF').value;if(!date)return;let list=ATT.filter(a=>a.date===date);
+  const tot=list.length;const pages=Math.ceil(tot/PP)||1;if(aPg>pages)aPg=pages;list=list.slice((aPg-1)*PP,aPg*PP);
+  const mMap={gps:'GPS',qr:'QR',upc:'UPC',manual:'يدوي'};
+  document.getElementById('attTB').innerHTML=list.length?list.map(a=>{const nm=getEmpName(a.eid);const cd=getEmpCode(a.eid);const stClass=!a.ci?'no':(!a.co?'ci':'co');const stText=!a.ci?'غائب':(!a.co?'حاضر':'اكتمل');return '<tr><td>'+nm+'</td><td><code style="font-size:9px;background:var(--bg2);padding:1px 4px;border-radius:3px">'+cd+'</code></td><td>'+(a.ci||'—')+'</td><td>'+(mMap[a.ciM]||a.ciM||'—')+'</td><td>'+(a.co||'—')+'</td><td>'+(mMap[a.coM]||a.coM||'—')+'</td><td>'+(a.delay>0?'<span style="color:var(--err);font-weight:700">'+a.delay+' د</span>':'0')+'</td><td><span class="aSt '+stClass+'">'+stText+'</span></td></tr>'}).join(''):'<tr><td colspan="8"><div class="emSt"><i class="fas fa-clipboard-list"></i>لا سجلات في هذا اليوم</div></td></tr>';
+  let pgH='';if(pages>1){pgH+='<button '+(aPg<=1?'disabled':'')+' onclick="aPg--;rAttL()"><i class="fas fa-chevron-right"></i></button>';for(let i=1;i<=pages;i++)pgH+='<button class="'+(i===aPg?'on':'')+'" onclick="aPg='+i+';rAttL()">'+i+'</button>';pgH+='<button '+(aPg>=pages?'disabled':'')+' onclick="aPg++;rAttL()"><i class="fas fa-chevron-left"></i></button>'}
+  document.getElementById('attPg').innerHTML=pgH;
+}
+
+/* ===== الإجازات ===== */
+function rLvs(){
+  const st=document.getElementById('lFS').value;let list=LVS;if(st)list=list.filter(l=>l.status===st);
+  const tot=list.length;const pages=Math.ceil(tot/PP)||1;if(lPg>pages)lPg=pages;list=list.slice((lPg-1)*PP,lPg*PP);
+  const tMap={annual:'اعتيادية',sick:'مرضية'};const sMap={pending:'معلّق',approved:'مقبول',rejected:'مرفوض'};
+  document.getElementById('lvTB').innerHTML=list.length?list.map(l=>{const nm=getEmpName(l.eid);return '<tr><td>'+nm+'</td><td>'+(tMap[l.type]||l.type)+'</td><td>'+l.from+'</td><td>'+l.to+'</td><td>'+l.days+'</td><td style="max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+l.reason+'</td><td><span class="lBdg '+l.status+'">'+sMap[l.status]+'</span></td><td>'+(l.status==='pending'?'<div class="actCell"><button class="bSm bS" onclick="actLv(\''+l.id+'\',\'approved\')"><i class="fas fa-check"></i></button><button class="bSm bD" onclick="actLv(\''+l.id+'\',\'rejected\')"><i class="fas fa-times"></i></button></div>':'—')+'</td></tr>'}).join(''):'<tr><td colspan="8"><div class="emSt"><i class="fas fa-calendar-alt"></i>لا إجازات</div></td></tr>';
+  let pgH='';if(pages>1){pgH+='<button '+(lPg<=1?'disabled':'')+' onclick="lPg--;rLvs()"><i class="fas fa-chevron-right"></i></button>';for(let i=1;i<=pages;i++)pgH+='<button class="'+(i===lPg?'on':'')+'" onclick="lPg='+i+';rLvs()">'+i+'</button>';pgH+='<button '+(lPg>=pages?'disabled':'')+' onclick="lPg++;rLvs()"><i class="fas fa-chevron-left"></i></button>'}
+  document.getElementById('lvPg').innerHTML=pgH;
+}
+
+function opLvM(){document.getElementById('lvE').innerHTML='<option value="">-- اختر --</option>'+EMPS.map(e=>'<option value="'+e.id+'">'+e.name+'</option>').join('');document.getElementById('lvS').value='';document.getElementById('lvE2').value='';document.getElementById('lvR').value='';oM('mLv')}
+
+function svLv(){
+  const eid=document.getElementById('lvE').value;const type=document.getElementById('lvT').value;const from=document.getElementById('lvS').value;const to=document.getElementById('lvE2').value;const reason=document.getElementById('lvR').value.trim();
+  if(!eid||!from||!to){toast('أكمل البيانات','error');return}
+  const d1=new Date(from);const d2=new Date(to);const days=Math.max(1,Math.ceil((d2-d1)/(1000*60*60*24))+1);
+  LVS.push({id:'l'+Date.now(),eid,type,from,to,days,reason,status:'pending'});svLS('m2_lvs',LVS);cM('mLv');rLvs();toast('تم تقديم طلب الإجازة','success');addNot('طلب إجازة جديد: '+getEmpName(eid)+' — '+days+' يوم','leave');
+}
+
+function actLv(id,status){const l=LVS.find(x=>x.id===id);if(!l)return;l.status=status;svLS('m2_lvs',LVS);rLvs();addNot('طلب إجازة '+(status==='approved'?'مقبول':'مرفوض')+': '+getEmpName(l.eid),'leave');toast('تم تحديث حالة الإجازة','success')}
+
+/* ===== الرواتب ===== */
+function fillSalMon(){const sel=document.getElementById('sMon');const now=new Date();let h='';for(let i=0;i<12;i++){const d=new Date(now.getFullYear(),now.getMonth()-i,1);const v=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');const l=d.toLocaleDateString('ar-EG',{month:'long',year:'numeric'});h+='<option value="'+v+'"'+(i===0?' selected':'')+'>'+l+'</option>'}sel.innerHTML=h}
+
+function rSals(){
+  const mon=document.getElementById('sMon').value;if(!mon)return;let totalB=0,totalD=0,totalDD=0,totalNet=0;
+  const rows=EMPS.map(e=>{const base=e.salary||0;const delayDed=calcDelayDed(e.id,mon);const manDed=calcManDed(e.id,mon);const adv=calcAdv(e.id,mon);const net=Math.max(0,base-delayDed-manDed-adv);totalB+=base;totalD+=delayDed;totalDD+=manDed;totalNet+=net;return '<tr><td>'+e.name+'</td><td>'+e.job+'</td><td>'+fmtM(base)+'</td><td>'+(delayDed>0?'<span style="color:var(--err)">'+fmtM(delayDed)+'</span>':'0')+'</td><td>'+((manDed+adv)>0?'<span style="color:var(--err)">'+fmtM(manDed+adv)+'</span>':'0')+'</td><td style="font-weight:900;color:var(--p)">'+fmtM(net)+'</td><td><button class="bSm bW" onclick="opDed(\''+e.id+'\')"><i class="fas fa-minus-circle"></i></button> <button class="bSm bI" onclick="opAdv(\''+e.id+'\')"><i class="fas fa-hand-holding-usd"></i></button></td></tr>'}).join('');
+  document.getElementById('salTB').innerHTML=rows||'<tr><td colspan="7"><div class="emSt"><i class="fas fa-money-bill-wave"></i>لا موظفين</div></td></tr>';
+  document.getElementById('salSum').innerHTML='<div class="salSI"><div class="sl">الأساسي</div><div class="sv" style="color:var(--p)">'+fmtM(totalB)+'</div></div><div class="salSI"><div class="sl">خصم تأخير</div><div class="sv" style="color:var(--err)">'+fmtM(totalD)+'</div></div><div class="salSI"><div class="sl">خصومات أخرى</div><div class="sv" style="color:var(--err)">'+fmtM(totalDD)+'</div></div><div class="salSI"><div class="sl">الصافي</div><div class="sv" style="color:var(--ok)">'+fmtM(totalNet)+'</div></div>';
+}
+
+function calcDelayDed(eid,mon){const days=getDaysInMon(mon);let tot=0;const dm=parseFloat(SET.dm)||1;days.forEach(d=>{const rec=ATT.find(a=>a.eid===eid&&a.date===d);if(rec&&rec.delay>0)tot+=rec.delay*dm});return tot}
+function calcManDed(eid,mon){return DEDS.filter(d=>d.eid===eid&&d.mon===mon).reduce((s,d)=>s+d.am,0)}
+function calcAdv(eid,mon){return ADVS.filter(a=>a.eid===eid&&a.mon===mon).reduce((s,a)=>s+a.am,0)}
+function getDaysInMon(mon){const [y,m]=mon.split('-').map(Number);const days=[];const d=new Date(y,m,0).getDate();for(let i=1;i<=d;i++)days.push(y+'-'+String(m).padStart(2,'0')+'-'+String(i).padStart(2,'0'));return days}
+
+function opDed(eid){document.getElementById('dEId').value=eid;document.getElementById('dAm').value='';document.getElementById('dRs').value='';oM('mDed')}
+function svDed(){const eid=document.getElementById('dEId').value;const am=parseFloat(document.getElementById('dAm').value)||0;const rs=document.getElementById('dRs').value.trim();const mon=document.getElementById('sMon').value;if(am<=0){toast('أدخل مبلغ صحيح','error');return}DEDS.push({eid,am,rs,mon,id:'d'+Date.now()});svLS('m2_deds',DEDS);cM('mDed');rSals();toast('تم تسجيل الخصم','success')}
+function opAdv(eid){document.getElementById('aEId').value=eid;document.getElementById('aAm').value='';document.getElementById('aRs').value='';oM('mAdv')}
+function svAdv(){const eid=document.getElementById('aEId').value;const am=parseFloat(document.getElementById('aAm').value)||0;const rs=document.getElementById('aRs').value.trim();const mon=document.getElementById('sMon').value;const emp=EMPS.find(e=>e.id===eid);const maxP=parseFloat(SET.ap)||50;const maxA=emp?(emp.salary*maxP/100):0;if(am<=0){toast('أدخل مبلغ صحيح','error');return}if(am>maxA){toast('السلفة تتجاوز الحد المسموح ('+fmtM(maxA)+')','error');return}ADVS.push({eid,am,rs,mon,id:'a'+Date.now()});svLS('m2_advs',ADVS);cM('mAdv');rSals();toast('تم صرف السلفة','success');addNot('سلفة: '+getEmpName(eid)+' — '+fmtM(am),'advance')}
+
+/* ===== التقارير ===== */
+function rRpt(){
+  const today=new Date();let totalAtt=0,totalLate=0,totalLv=0,totalDed=0;
+  for(let i=6;i>=0;i--){const d=new Date(today);d.setDate(d.getDate()-i);const ds=d.toISOString().split('T')[0];const dayAtt=ATT.filter(a=>a.date===ds);totalAtt+=dayAtt.filter(a=>a.ci).length;totalLate+=dayAtt.reduce((s,a)=>s+a.delay,0)}
+  LVS.filter(l=>l.status==='approved').forEach(l=>totalLv+=l.days);const thisMon=today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0');DEDS.filter(d=>d.mon===thisMon).forEach(d=>totalDed+=d.am);ADVS.filter(a=>a.mon===thisMon).forEach(a=>totalDed+=a.am);
+  const pct=EMPS.length?(Math.round(totalAtt/(EMPS.length*7)*100))+'%':'0%';
+  document.getElementById('rpAR').textContent=pct;document.getElementById('rpLM').textContent=totalLate;document.getElementById('rpLD').textContent=totalLv;document.getElementById('rpTD').textContent=fmtM(totalDed);
+  const labels=[];const dataP=[];const dataA=[];
+  for(let i=6;i>=0;i--){const d=new Date(today);d.setDate(d.getDate()-i);const ds=d.toISOString().split('T')[0];labels.push(d.toLocaleDateString('ar-EG',{weekday:'short'}));const dayAtt=ATT.filter(a=>a.date===ds);dataP.push(dayAtt.filter(a=>a.ci).length);dataA.push(EMPS.length-dayAtt.filter(a=>a.ci).length)}
+  const ctx1=document.getElementById('chWk');if(chWkO)chWkO.destroy();chWkO=new Chart(ctx1,{type:'line',data:{labels,datasets:[{label:'حاضر',data:dataP,borderColor:'#22c55e',backgroundColor:'rgba(34,197,94,.1)',fill:true,tension:.4},{label:'غائب',data:dataA,borderColor:'#ef4444',backgroundColor:'rgba(239,68,68,.1)',fill:true,tension:.4}]},options:{responsive:true,plugins:{legend:{labels:{font:{family:'Cairo',size:10}}}},scales:{y:{beginAtZero:true,ticks:{stepSize:1,font:{family:'Cairo',size:9}}},x:{ticks:{font:{family:'Cairo',size:9}}}}}});
+  const empDelay=EMPS.map(e=>{const mins=ATT.filter(a=>a.eid===e.id).reduce((s,a)=>s+a.delay,0);return{n:e.name.split(' ')[0],m:mins}}).sort((a,b)=>b.m-a.m).slice(0,6);
+  const ctx2=document.getElementById('chAb');if(chAbO)chAbO.destroy();chAbO=new Chart(ctx2,{type:'bar',data:{labels:empDelay.map(e=>e.n),datasets:[{label:'دقائق تأخير',data:empDelay.map(e=>e.m),backgroundColor:'rgba(239,68,68,.7)',borderRadius:6}]},options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,ticks:{font:{family:'Cairo',size:9}}},y:{ticks:{font:{family:'Cairo',size:9}}}}}});
+}
+
+/* ===== صفحة الموظف ===== */
+function rEmpAtt(){
+  if(!curEmp)return;const today=new Date().toISOString().split('T')[0];const rec=ATT.find(a=>a.eid===curEmp.id&&a.date===today);
+  let html='<div class="eAttB">';
+  if(!rec||!rec.ci)html+='<button class="bIn" onclick="empCheckIn()"><i class="fas fa-sign-in-alt"></i> تسجيل حضور</button>';
+  if(rec&&rec.ci&&!rec.co)html+='<button class="bOut" onclick="empCheckOut()"><i class="fas fa-sign-out-alt"></i> تسجيل انصراف</button>';
+  if(!rec)html+='<button disabled style="opacity:.3"><i class="fas fa-sign-out-alt"></i> تسجيل انصراف</button>';
+  if(rec&&rec.ci&&rec.co)html+='<div style="padding:10px;color:var(--ok);font-weight:700"><i class="fas fa-check-circle"></i> اكتمل يومك — حضور: '+rec.ci+' انصراف: '+rec.co+(rec.delay>0?' (تأخير: '+rec.delay+' د)':'')+'</div>';
+  html+='</div>';
+  const recent=ATT.filter(a=>a.eid===curEmp.id).sort((a,b)=>b.date.localeCompare(a.date)).slice(0,5);
+  if(recent.length){html+='<table class="mTb"><thead><tr><th>التاريخ</th><th>حضور</th><th>انصراف</th><th>تأخير</th></tr></thead><tbody>';recent.forEach(r=>{html+='<tr><td>'+r.date+'</td><td>'+(r.ci||'—')+'</td><td>'+(r.co||'—')+'</td><td>'+(r.delay>0?'<span style="color:var(--err)">'+r.delay+'د</span>':'0')+'</td></tr>'});html+='</tbody></table>'}
+  document.getElementById('eASec').innerHTML=html;
+}
+function empCheckIn(){if(!curEmp)return;regAtt(curEmp.id,'manual','');rEmpAtt();toast('تم تسجيل الحضور','success')}
+function empCheckOut(){if(!curEmp)return;regAttOut(curEmp.id,'manual','');rEmpAtt();toast('تم تسجيل الانصراف','success')}
+
+function rEmpSal(){
+  if(!curEmp)return;const now=new Date();const mon=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');const base=curEmp.salary||0;const delayD=calcDelayDed(curEmp.id,mon);const manD=calcManDed(curEmp.id,mon);const adv=calcAdv(curEmp.id,mon);const net=Math.max(0,base-delayD-manD-adv);
+  document.getElementById('eSSec').innerHTML='<div class="salDC"><div class="salDH">كشف راتب — '+now.toLocaleDateString('ar-EG',{month:'long',year:'numeric'})+'</div><div class="salDB"><div class="sRow"><div class="sRL"><i class="fas fa-money-bill"></i> الراتب الأساسي</div><div class="sV">'+fmtM(base)+'</div></div><div class="sRow dd"><div class="sRL"><i class="fas fa-clock"></i> خصم تأخير</div><div class="sV">-'+fmtM(delayD)+'</div></div>'+(manD>0?'<div class="sRow dd"><div class="sRL"><i class="fas fa-minus-circle"></i> خصومات يدوية</div><div class="sV">-'+fmtM(manD)+'</div></div>':'')+(adv>0?'<div class="sRow dd"><div class="sRL"><i class="fas fa-hand-holding-usd"></i> سلفة</div><div class="sV">-'+fmtM(adv)+'</div></div>':'')+'<div class="sRow tot"><div class="sRL"><i class="fas fa-wallet"></i> الصافي</div><div class="sV">'+fmtM(net)+'</div></div></div></div>';
+}
+
+function rEmpLv(){
+  if(!curEmp)return;const myLvs=LVS.filter(l=>l.eid===curEmp.id);const tMap={annual:'اعتيادية',sick:'مرضية'};const sMap={pending:'معلّق',approved:'مقبول',rejected:'مرفوض'};
+  if(!myLvs.length){document.getElementById('eLSec').innerHTML='<div class="emSt"><i class="fas fa-calendar-alt"></i>لا إجازات</div>';return}
+  document.getElementById('eLSec').innerHTML='<table class="mTb"><thead><tr><th>النوع</th><th>من</th><th>إلى</th><th>الأيام</th><th>الحالة</th></tr></thead><tbody>'+myLvs.map(l=>'<tr><td>'+(tMap[l.type]||l.type)+'</td><td>'+l.from+'</td><td>'+l.to+'</td><td>'+l.days+'</td><td><span class="lBdg '+l.status+'">'+sMap[l.status]+'</span></td></tr>').join('')+'</tbody></table>';
+}
+
+function rEmpFin(){
+  if(!curEmp)return;const now=new Date();let totDed=0,totAdv=0;
+  for(let i=0;i<6;i++){const d=new Date(now.getFullYear(),now.getMonth()-i,1);const mon=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');totDed+=calcManDed(curEmp.id,mon);totAdv+=calcAdv(curEmp.id,mon)}
+  const totDelay=ATT.filter(a=>a.eid===curEmp.id).reduce((s,a)=>s+a.delay,0);
+  document.getElementById('eFSec').innerHTML='<div class="finG"><div class="finC gn"><div class="fI"><i class="fas fa-money-bill-wave"></i></div><div class="fV">'+fmtM(curEmp.salary||0)+'</div><div class="fL">الراتب الأساسي</div></div><div class="finC rd"><div class="fI"><i class="fas fa-minus-circle"></i></div><div class="fV">'+fmtM(totDed)+'</div><div class="fL">إجمالي الخصومات (6 أشهر)</div></div><div class="finC gd"><div class="fI"><i class="fas fa-hand-holding-usd"></i></div><div class="fV">'+fmtM(totAdv)+'</div><div class="fL">إجمالي السلف (6 أشهر)</div></div><div class="finC bl"><div class="fI"><i class="fas fa-clock"></i></div><div class="fV">'+totDelay+' د</div><div class="fL">إجمالي التأخير</div></div><div class="finC gn"><div class="fI"><i class="fas fa-calendar-check"></i></div><div class="fV">'+ATT.filter(a=>a.eid===curEmp.id&&a.ci&&a.co).length+'</div><div class="fL">أيام اكتمال الحضور</div></div><div class="finC rd"><div class="fI"><i class="fas fa-plane-departure"></i></div><div class="fV">'+LVS.filter(l=>l.eid===curEmp.id&&l.status==='approved').reduce((s,l)=>s+l.days,0)+'</div><div class="fL">أيام الإجازات</div></div></div>';
+}
+
+/* ===== الإعدادات ===== */
+function opSet(){
+  document.getElementById('stCn').value=SET.cn||'';document.getElementById('stWT').value=SET.wt||'09:00';document.getElementById('stWTE').value=SET.wte||'17:00';document.getElementById('stDM').value=SET.dm||1;document.getElementById('stAP').value=SET.ap||50;document.getElementById('stLat').value=SET.lat||'';document.getElementById('stLng').value=SET.lng||'';document.getElementById('stGR').value=SET.gr||100;
+  const adm=ACC.find(a=>a.r==='admin');document.getElementById('stAdmU').value=adm?adm.u:'admin';document.getElementById('stAdmP').value='';document.getElementById('stAdmP2').value='';
+  if(SET.logo)document.getElementById('logoPV').innerHTML='<img src="'+SET.logo+'">';else document.getElementById('logoPV').innerHTML='<i class="fas fa-cloud-upload-alt"></i>';
+  oM('mSet');
+}
+
+function upLogo(inp){const f=inp.files[0];if(!f)return;const r=new FileReader();r.onload=function(e){SET.logo=e.target.result;document.getElementById('logoPV').innerHTML='<img src="'+e.target.result+'">'};r.readAsDataURL(f)}
+
+function svSet(){
+  SET.cn=document.getElementById('stCn').value.trim()||'M2INFINITY';SET.wt=document.getElementById('stWT').value;SET.wte=document.getElementById('stWTE').value;SET.dm=parseFloat(document.getElementById('stDM').value)||1;SET.ap=parseFloat(document.getElementById('stAP').value)||50;SET.lat=document.getElementById('stLat').value;SET.lng=document.getElementById('stLng').value;SET.gr=parseFloat(document.getElementById('stGR').value)||100;svLS('m2_set',SET);
+  const newU=document.getElementById('stAdmU').value.trim();const newP=document.getElementById('stAdmP').value;const newP2=document.getElementById('stAdmP2').value;const adm=ACC.find(a=>a.r==='admin');
+  if(adm){if(newU&&newU!==adm.u){if(ACC.some(a=>a.u===newU&&a.r!=='admin')){toast('اسم المستخدم موجود','error');return}SET.au=newU;adm.u=newU}if(newP){if(newP.length<4){toast('كلمة المرور لازم 4 حروف','error');return}if(newP!==newP2){toast('كلمتا المرور غير متطابقتين','error');return}adm.p=newP}svLS('m2_acc',ACC);svLS('m2_set',SET)}
+  document.getElementById('hdrName').textContent=SET.cn;if(SET.logo){const l=document.getElementById('hdrLogo');l.src=SET.logo;l.style.display='block'}cM('mSet');toast('تم حفظ الإعدادات','success');
+}
+
+/* ===== تصدير ===== */
+function exCSV(type){
+  let rows=[];let fn='export.csv';
+  if(type==='emp'){fn='employees.csv';rows=[['الكود','الاسم','الوظيفة','الراتب','الصلاحية']];EMPS.forEach(e=>rows.push([e.code,e.name,e.job,e.salary,e.role]))}
+  else if(type==='att'){fn='attendance.csv';rows=[['التاريخ','الموظف','الكود','حضور','انصراف','تأخير']];ATT.forEach(a=>rows.push([a.date,getEmpName(a.eid),getEmpCode(a.eid),a.ci||'',a.co||'',a.delay]))}
+  else if(type==='lv'){fn='leaves.csv';rows=[['الموظف','النوع','من','إلى','الأيام','الحالة']];LVS.forEach(l=>rows.push([getEmpName(l.eid),l.type,l.from,l.to,l.days,l.status]))}
+  else if(type==='sal'){fn='salaries.csv';const mon=document.getElementById('sMon').value;rows=[['الموظف','الوظيفة','الأساسي','خصم تأخير','خصومات','صافي']];EMPS.forEach(e=>{const dd=calcDelayDed(e.id,mon);const md=calcManDed(e.id,mon)+calcAdv(e.id,mon);rows.push([e.name,e.job,e.salary,dd,md,Math.max(0,e.salary-dd-md)])})}
+  const csv='\uFEFF'+rows.map(r=>r.join(',')).join('\n');const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=fn;a.click();toast('تم التصدير','success');
+}
+
+/* ===== مساعدات ===== */
+function getEmpName(eid){const e=EMPS.find(x=>x.id===eid);return e?e.name:'—'}
+function getEmpCode(eid){const e=EMPS.find(x=>x.id===eid);return e?e.code:'—'}
+function fmtM(n){return Number(n||0).toLocaleString('ar-EG')}
+
+/* ===== تشغيل أولي مع Firebase ===== */
+async function bootApp(){
+  const loader=document.getElementById('fbLoading');
+  try{
+    const r=await Promise.all([
+      ldFB('m2_acc',DEF_ACC), ldFB('m2_set',DEF_SET), ldFB('m2_emps',[]),
+      ldFB('m2_att',[]), ldFB('m2_lvs',[]), ldFB('m2_pnd',[]),
+      ldFB('m2_nots',[]), ldFB('m2_deds',[]), ldFB('m2_advs',[])
+    ]);
+    ACC=r[0];SET=r[1];EMPS=r[2];ATT=r[3];LVS=r[4];PND=r[5];NOTS=r[6];DEDS=r[7];ADVS=r[8];
+  }catch(e){
+    console.error('Firebase init error, using localStorage:',e);
+    ACC=ld('m2_acc',DEF_ACC);SET=ld('m2_set',DEF_SET);
+    EMPS=ld('m2_emps',[]);ATT=ld('m2_att',[]);LVS=ld('m2_lvs',[]);
+    PND=ld('m2_pnd',[]);NOTS=ld('m2_nots',[]);DEDS=ld('m2_deds',[]);ADVS=ld('m2_advs',[]);
+  }
+  if(loader)loader.style.display='none';
+  if(!ACC.find(a=>a.r==='admin')){ACC.push({u:'admin',p:'admin',r:'admin',ei:null,ln:''});svLS('m2_acc',ACC)}
+  const saved=localStorage.getItem('m2_session');
+  if(saved){try{const s=JSON.parse(saved);const acc=ACC.find(a=>a.u===s.u&&a.p===s.p);if(acc){if(acc.r==='admin'){curAcc=acc;document.getElementById('authScreen').style.display='none';initAdmin()}else if(acc.ei){curAcc=acc;document.getElementById('authScreen').style.display='none';initEmp()}}}catch(e){}}
+}
+bootApp();
+</script>
+</body>
+</html>
