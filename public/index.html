@@ -533,7 +533,8 @@ textarea.fInp{resize:vertical;min-height:45px}
 <div class="hdrB"><img id="eHLogo" src="" style="display:none"><div><h2 id="eHName">M2INFINITY</h2><span class="hdrR" id="eHRole"></span></div></div>
 <div class="hdrA">
 <span class="lclk" id="eClk"></span>
-<button class="bIcon" onclick="opEmpChgPass()" title="تغيير كلمة المرور"><i class="fas fa-key"></i></button>
+<button class="bIcon" onclick="opEmpLv()" title="طلب إجازة"><i class="fas fa-calendar-plus"></i></button>
+      <button class="bIcon" onclick="opEmpChgPass()" title="تغيير كلمة المرور"><i class="fas fa-key"></i></button>
 <button class="bIcon" onclick="tgTheme()"><i class="fas fa-moon" id="thI2"></i></button>
 <button class="bIcon dng" onclick="doLogout()"><i class="fas fa-sign-out-alt"></i></button>
 </div>
@@ -661,6 +662,18 @@ document.getElementById('regPass2').addEventListener('keydown',function(e){if(e.
 document.getElementById('upcIn').addEventListener('keydown',function(e){if(e.key==='Enter')doUPC('in')});
 
 function swF(t){
+  if(t==='reg'){
+    const prev=localStorage.getItem('m2_reg_submitted');
+    if(prev){
+      try{
+        const err=document.getElementById('errUser');
+        err.textContent='تم تقديم طلبك وانتظار الاداره — لا يمكنك التقديم مرة أخرى';
+        err.style.color='var(--ok)';
+        err.classList.add('on');
+      }catch(e){}
+      return;
+    }
+  }
   document.getElementById('frmLogin').classList.toggle('on',t==='login');
   document.getElementById('frmReg').classList.toggle('on',t==='reg');
   ['errLogin','errUser','errPass','errCard'].forEach(id=>{const el=document.getElementById(id);el.classList.remove('on');el.textContent=''});
@@ -712,7 +725,8 @@ function doRegister(){
   if(!ok)return;
   const code=genCode();
   PND.push({nm,jb,u,p,ph,code,fr,bk,dt:new Date().toLocaleString('ar-EG')});
-  svLS('m2_pnd',PND);toast('تم تقديم طلبك بنجاح، انتظر موافقة المدير','success');swF('login');
+  svLS('m2_pnd',PND);
+      localStorage.setItem('m2_reg_submitted', JSON.stringify({u, nm, dt: new Date().toLocaleString('ar-EG')}));toast('تم تقديم طلبك بنجاح، انتظر موافقة المدير','success');swF('login');
   document.getElementById('regName').value='';document.getElementById('regJob').value='';document.getElementById('regUser').value='';document.getElementById('regPhone').value='';document.getElementById('regPass').value='';document.getElementById('regPass2').value='';
   document.getElementById('dataFront').value='';document.getElementById('dataBack').value='';
   document.getElementById('boxFront').innerHTML='<i class="fas fa-id-card"></i><span>الوجه الأمامي *</span><input type="file" accept="image/*" onchange="upCard(this,\'front\')">';
@@ -1518,6 +1532,7 @@ function sendWASlip(eid){
 
 /* ===== تشغيل أولي مع Firebase ===== */
 async function bootApp(){
+  if(localStorage.getItem('m2_reg_submitted')){const regSw=document.querySelector('#frmLogin .authSw');if(regSw)regSw.style.display='none'}
   const loader=document.getElementById('fbLoading');
   try{
     const r=await Promise.all([
