@@ -625,10 +625,10 @@ const db = firebase.database();
 function ld(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):JSON.parse(JSON.stringify(d))}catch(e){return JSON.parse(JSON.stringify(d))}}
 
 /* قراءة من Firebase — لو فيه إنترنت */
-async function ldFB(k,d){try{const snap=await await firebase.database().ref('data/'+k).once('value');if(snap.exists()&&snap.val()!==null){const v=snap.val();localStorage.setItem(k,JSON.stringify(v));return v}}catch(e){console.warn('Firebase read err:',k)}return ld(k,d)}
+async function ldFB(k,d){try{const snap=await firebase.database().ref('data/'+k).once('value');if(snap.exists()&&snap.val()!==null){const v=snap.val();localStorage.setItem(k,JSON.stringify(v));return v}}catch(e){console.warn('Firebase read err:',k)}return ld(k,d)}
 
 /* حفظ في Firebase + localStorage */
-async function svLS(k,v){localStorage.setItem(k,JSON.stringify(v));try{firebase.database().ref('data/'+k).set(v)}catch(e){console.warn('Firebase write err:',k)}}
+async function svLS(k,v){localStorage.setItem(k,JSON.stringify(v));try{await firebase.database().ref('data/'+k).set(v)}catch(e){console.warn('Firebase write err:',k)}}
 
 /* المتغيرات — هتتملأ من Firebase */
 let ACC=ld('m2_acc',DEF_ACC);
