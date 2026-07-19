@@ -628,10 +628,10 @@ const db = firebase.database();
 function ld(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):JSON.parse(JSON.stringify(d))}catch(e){return JSON.parse(JSON.stringify(d))}}
 
 /* قراءة من Firebase — لو فيه إنترنت */
-async function ldFB(k,d){try{const snap=await firebase.database().ref('data/'+k).once('value');if(snap.exists()&&snap.val()!==null){const v=snap.val();const lc=ld(k,d);if(Array.isArray(lc)&&Array.isArray(v)&&lc.length>v.length){svLS(k,lc);return lc}localStorage.setItem(k,JSON.stringify(v));return v}}catch(e){console.warn('Firebase read err:',k)}return ld(k,d)}
+async function ldFB(k,d){try{const snap=await firebase.database().ref('data/'+k).once('value');if(snap.exists()&&snap.val()!==null){const v=snap.val();const lc=ld(k,d);if(Array.isArray(lc)&&Array.isArray(v)&&lc.length>v.length){svLS(k,lc);return lc}return v}}catch(e){console.warn('Firebase read err:',k)}return ld(k,d)}
 
 /* حفظ في Firebase + localStorage */
-async function svLS(k,v){localStorage.setItem(k,JSON.stringify(v));try{await firebase.database().ref('data/'+k).set(v)}catch(e){console.warn('Firebase write err:',k)}}
+async function svLS(k,v){try{await firebase.database().ref('data/'+k).set(v)}catch(e){console.warn('Firebase write err:',k)}}
 
 /* المتغيرات — هتتملأ من Firebase */
 let ACC=ld('m2_acc',DEF_ACC);
@@ -1537,7 +1537,7 @@ function sendWASlip(eid){
 }
 
 /* ===== تشغيل أولي مع Firebase ===== */
-async function syncAll(){await Promise.all([svLS('m2_acc',ACC),svLS('m2_set',SET),svLS('m2_emps',EMPS),svLS('m2_att',ATT),svLS('m2_lvs',LVS),svLS('m2_pnd',PND),svLS('m2_nots',NOTS),svLS('m2_deds',DEDS),svLS('m2_advs',ADVS),svLS('m2_logs',LOGS),svLS('m2_warns',WARNS)])}
+async function loadAll(){try{var d=await firebase.database().ref("data").once("value");var v=d.val();if(!v)return;if(v.m2_acc)ACC=v.m2_acc;if(v.m2_emps)EMPS=v.m2_emps;if(v.m2_set)SET=v.m2_set;if(v.m2_att)ATT=v.m2_att;if(v.m2_lvs)LVS=v.m2_lvs;if(v.m2_pnd)PND=v.m2_pnd;if(v.m2_nots)NOTS=v.m2_nots;if(v.m2_deds)DEDS=v.m2_deds;if(v.m2_advs)ADVS=v.m2_advs;if(v.m2_warns)WARNS=v.m2_warns;if(v.m2_logs)LOGS=v.m2_logs}catch(e){}}
 async function bootApp(){
   if(localStorage.getItem('m2_reg_submitted')){const regSw=document.querySelector('#frmLogin .authSw');if(regSw)regSw.style.display='none'}
   const loader=document.getElementById('fbLoading');
@@ -1555,7 +1555,7 @@ async function bootApp(){
     EMPS=ld('m2_emps',[]);ATT=ld('m2_att',[]);LVS=ld('m2_lvs',[]);
     PND=ld('m2_pnd',[]);NOTS=ld('m2_nots',[]);DEDS=ld('m2_deds',[]);ADVS=ld('m2_advs',[]);LOGS=ld('m2_logs',[]);WARNS=ld('m2_warns',[]);
   }
-  await syncAll();
+  await loadAll();
   if(loader)loader.style.display='none';
   if(!ACC.find(a=>a.r==='admin')){ACC.push({u:'admin',p:'admin',r:'admin',ei:null,ln:''});svLS('m2_acc',ACC)}
   const saved=localStorage.getItem('m2_session');
