@@ -625,7 +625,7 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
 /* قراءة من localStorage (كمخزن مؤقت) */
-function ld(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):JSON.parse(JSON.stringify(d))}catch(e){return JSON.parse(JSON.stringify(d))}}
+function ld(k,d){return JSON.parse(JSON.stringify(d))}
 
 /* قراءة من Firebase — لو فيه إنترنت */
 async function ldFB(k,d){try{const snap=await firebase.database().ref('data/'+k).once('value');if(snap.exists()&&snap.val()!==null){const v=snap.val();const lc=ld(k,d);if(Array.isArray(lc)&&Array.isArray(v)&&lc.length>v.length){svLS(k,lc);return lc}return v}}catch(e){console.warn('Firebase read err:',k)}return ld(k,d)}
