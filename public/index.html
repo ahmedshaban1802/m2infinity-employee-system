@@ -698,13 +698,14 @@ async function doLogin(){
   const p=document.getElementById('inpPass').value;
   const err=document.getElementById('errLogin');
   if(!u||!p){err.textContent='أدخل اسم المستخدم وكلمة المرور';err.classList.add('on');return}
-  try{ACC=await ldFB('m2_acc',ACC)}catch(e){}
+  try{try{var _ad=await firebase.database().ref('data/m2_acc').once('value');if(_ad.val())ACC=_ad.val()}catch(e){}}catch(e){}
   const acc=ACC.find(a=>a.u===u&&a.p===p);
   if(!acc){err.textContent='اسم المستخدم أو كلمة المرور غير صحيحة';err.classList.add('on');return}
   err.classList.remove('on');
   if(acc.r!=='admin'&&acc.r!=='manager'&&acc.r!=='owner'&&!acc.ei){err.textContent='حسابك قيد المراجعة، انتظر موافقة المدير';err.classList.add('on');return}
   curAcc=acc;acc.ln=new Date().toLocaleString('ar-EG');svLS('m2_acc',ACC);addLog('تسجيل دخول','تم تسجيل دخول: '+acc.u,'login');
   document.getElementById('authScreen').style.display='none';
+  try{var _ed=await firebase.database().ref('data/m2_emps').once('value');if(_ed.val())EMPS=_ed.val()}catch(e){}
   if(acc.r==='admin'||acc.r==='manager'||acc.r==='owner')initAdmin();else initEmp();
   localStorage.setItem('m2_session',JSON.stringify({u:acc.u,p:acc.p}));
   if(acc.r==='employee')localStorage.removeItem('m2_reg_submitted');
@@ -1559,6 +1560,7 @@ async function bootApp(){
   if(loader)loader.style.display='none';
   if(!ACC.find(a=>a.r==='admin')){ACC.push({u:'admin',p:'admin',r:'admin',ei:null,ln:''});svLS('m2_acc',ACC)}
   const saved=localStorage.getItem('m2_session');
+  try{var _ed=await firebase.database().ref('data/m2_emps').once('value');if(_ed.val())EMPS=_ed.val()}catch(e){}
   if(saved){try{const s=JSON.parse(saved);const acc=ACC.find(a=>a.u===s.u&&a.p===s.p);if(acc){if(acc.r==='admin'){curAcc=acc;document.getElementById('authScreen').style.display='none';initAdmin()}else if(acc.ei){curAcc=acc;document.getElementById('authScreen').style.display='none';initEmp()}}}catch(e){}}
 }
 bootApp();
