@@ -1,0 +1,3 @@
+#!/bin/bash
+f-"public/index.html"
+sed -i "s/^bootApp();/bootApp();\nsetAutoRefresh=setAutoRefresh||function(){setTimeout(async()=>{try{const d=await firebase.database().ref('data').once('value');if(!d.exists()||!d.val())return;const v=d.val();if(v.m2_pnd){PND=v.m2_pnd;if(typeof upPBdg==='function')upPBdg()}if(v.m2_nots){NOTS=v.m2_nots;if(typeof upNBdg==='function')upNBdg()}if(typeof rEmps==='function')remps()}catch(e){}},15000)}();}
