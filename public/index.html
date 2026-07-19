@@ -890,7 +890,7 @@ async function accPend(idx,ok){
   const p=PND[idx];if(!p)return;
   if(ok){const eid='e'+Date.now();EMPS.push({id:eid,name:p.nm,code:p.code,job:p.job,salary:0,role:'employee',phone:p.ph||'',photo:'',cardFront:p.fr,cardBack:p.bk});ACC.push({u:p.u,p:p.p,r:'employee',ei:eid,ln:''});addNot('تم قبول حساب الموظف: '+p.nm,'login');addLog('قبول حساب','تم قبول حساب الموظف: '+p.nm,'add');toast('تم قبول '+p.nm,'success')}
   else{toast('تم رفض طلب '+p.nm,'warning')}
-  PND.splice(idx,1);await Promise.all([svLS('m2_pnd',PND),svLS('m2_emps',EMPS),svLS('m2_acc',ACC)]);upPBdg();opPend();
+  PND.splice(idx,1);await Promise.all([svLS('m2_pnd',PND),svLS('m2_emps',EMPS),svLS('m2_acc',ACC)]);upPBdg();opPend();if(ok)opAccM();
 }
 
 function opAccM(){
