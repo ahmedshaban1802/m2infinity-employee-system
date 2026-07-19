@@ -1300,7 +1300,7 @@ function doRestore(inp){
       const keys = ['m2_acc','m2_set','m2_emps','m2_att','m2_lvs','m2_pnd','m2_nots','m2_deds','m2_advs','m2_logs','m2_warns'];
       keys.forEach(k => {
         if(data[k] !== undefined){
-          localStorage.setItem(k, JSON.stringify(data[k]));
+          try{firebase.database().ref("data/"+k).set(data[k])}catch(e){};
           if(k==='m2_acc') ACC=data[k];
           if(k==='m2_set') SET=data[k];
           if(k==='m2_emps') EMPS=data[k];
@@ -1565,6 +1565,8 @@ async function bootApp(){
   try{var _ed=await firebase.database().ref('data/m2_emps').once('value');if(_ed.val())EMPS=_ed.val()}catch(e){}
   if(saved){try{const s=JSON.parse(saved);const acc=ACC.find(a=>a.u===s.u&&a.p===s.p);if(acc){if(acc.r==='admin'){curAcc=acc;document.getElementById('authScreen').style.display='none';initAdmin()}else if(acc.ei){curAcc=acc;document.getElementById('authScreen').style.display='none';initEmp()}}}catch(e){}}
 }
+setAutoRefresh=setAutoRefresh||function(){setTimeout(async function(){try{var d=await firebase.database().ref("data").once("value");if(d.val()==null)return;var v=d.val();if(v.m2_acc)ACC=v.m2_acc;if(v.m2_emps)EMPS=v.m2_emps;if(v.m2_set)SET=v.m2_set;if(v.m2_att)ATT=v.m2_att;if(v.m2_lvs)LVS=v.m2_lvs;if(v.m2_pnd){PND=v.m2_pnd;if(typeof upPBdg==="function")upPBdg()}if(v.m2_nots){NOTS=v.m2_nots;if(typeof upNBdg==="function")upNBdg()}if(v.m2_deds)DEDS=v.m2_deds;if(v.m2_advs)ADVS=v.m2_advs;if(v.m2_warns)WARNS=v.m2_warns;if(v.m2_logs)LOGS=v.m2_logs;if(typeof rEmps==="function")rEmps()}catch(e){}},1500)}();
+['m2_acc','m2_emps','m2_set','m2_att','m2_lvs','m2_pnd','m2_nots','m2_deds','m2_advs','m2_warns','m2_logs'].forEach(k=>localStorage.removeItem(k));
 bootApp();
 </script>
 </body>
