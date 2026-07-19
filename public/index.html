@@ -1561,7 +1561,6 @@ async function bootApp(){
   const saved=localStorage.getItem('m2_session');
   if(saved){try{const s=JSON.parse(saved);const acc=ACC.find(a=>a.u===s.u&&a.p===s.p);if(acc){if(acc.r==='admin'){curAcc=acc;document.getElementById('authScreen').style.display='none';initAdmin()}else if(acc.ei){curAcc=acc;document.getElementById('authScreen').style.display='none';initEmp()}}}catch(e){}}
 }
-setAutoRefresh=setAutoRefresh||function(){setTimeout(async function(){try{var d=await firebase.database().ref('data').once('value');if(d.val()==null)return;var v=d.val();if(v.m2_acc)ACC=v.m2_acc;if(v.m2_emps)EMPS=v.m2_emps;if(v.m2_att)ATT=v.m2_att;if(v.m2_lvs)LVS=v.m2_lvs;if(v.m2_pnd){PND=v.m2_pnd;if(typeof upPBdg==='function')upPBdg()}if(v.m2_nots){NOTS=v.m2_nots;if(typeof upNBdg==='function')upNBdg()}if(v.m2_deds)DEDS=v.m2_deds;if(v.m2_advs)ADVS=v.m2_advs;if(v.m2_warns)WARNS=v.m2_warns;if(v.m2_logs)LOGS=v.m2_logs;if(typeof rEmps==='function')rEmps()}catch(e){}},15000)}();
 bootApp();
 </script>
 </body>
