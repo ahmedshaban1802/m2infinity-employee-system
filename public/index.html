@@ -758,7 +758,7 @@ function doRegister(){
   document.getElementById('boxBack').innerHTML='<i class="fas fa-id-card-clip"></i><span>الوجه الخلفي *</span><input type="file" accept="image/*" onchange="upCard(this,\'back\')">';
 }
 
-function doLogout(){
+function doLogout(){stopAutoRefresh();
   curAcc=null;curEmp=null;localStorage.removeItem('m2_session');
   document.getElementById('appAdmin').style.display='none';document.getElementById('appEmp').style.display='none';
   document.getElementById('authScreen').style.display='flex';
@@ -794,6 +794,9 @@ function sET(id,btn){
   if(id==='eA')rEmpAtt();if(id==='eS')rEmpSal();if(id==='eL')rEmpLv();if(id==='eF')rEmpFin();if(id==='eD')rEmpAllDeds();if(id==='eW')rEmpWarns();
 }
 
+var _arTimer=null;
+function setAutoRefresh(ms){if(_arTimer)clearInterval(_arTimer);_arTimer=setInterval(async()=>{try{await loadAll()}catch(e){}},ms||1100)}
+function stopAutoRefresh(){if(_arTimer){clearInterval(_arTimer);_arTimer=null}}
 function initAdmin(){
   document.getElementById('appAdmin').style.display='block';document.getElementById('appEmp').style.display='none';
   const RL_MAP={admin:'مدير النظام',owner:'صاحب عمل',manager:'مدير',employee:'موظف'};
@@ -822,7 +825,7 @@ function initAdmin(){
       document.getElementById('wTxt').textContent='مرحباً بك يا مدير فرع: ' + getBranchName(getUserBranch());
     }
   }
-  rDash();upNBdg();upPBdg();startLiveDash();
+  rDash();upNBdg();upPBdg();startLiveDash();setAutoRefresh(1100);
 }
 
 function initEmp(){
@@ -832,7 +835,7 @@ function initEmp(){
   document.getElementById('eHName').textContent=SET.cn||'M2INFINITY';
   const RL_MAP={admin:'مدير النظام',owner:'صاحب عمل',manager:'مدير',employee:'موظف'};document.getElementById('eHRole').textContent=RL_MAP[curEmp.role]||curEmp.role||'موظف';
   if(SET.logo){const l=document.getElementById('eHLogo');l.src=SET.logo;l.style.display='block'}
-  rEmpInfo();rEmpAtt();
+  rEmpInfo();rEmpAtt();setAutoRefresh(1100);
 }
 
 function rEmpInfo(){
