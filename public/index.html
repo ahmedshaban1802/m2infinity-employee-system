@@ -2,9 +2,6 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="Cache-Control" content="no-cache,no-store,must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>نظام إدارة الموظفين — M2INFINITY</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -516,7 +513,7 @@ textarea.fInp{resize:vertical;min-height:45px}
 <div id="logs" class="tCnt">
 <div class="tBar">
 <h3 style="font-weight:700;flex:1;font-size:11px"><i class="fas fa-history" style="color:var(--p)"></i> سجل النشاط</h3>
-<button class="bD" onclick="if(confirm('مسح كل السجلات؟')){LOGS=[];svLS('m2_logs',LOGS);rLogs();toast('تم مسح السجلات','success')}"><i class="fas fa-trash"></i> مسح</button>
+<button class="bD" onclick="if(confirm('مسح كل السجلات؟')){LOGS=[];svLS('m2_logs',LOGS).then(()=>{rLogs();toast('تم مسح السجلات','success')})}"><i class="fas fa-trash"></i> مسح</button>
 </div>
 <div class="logFilter" id="logFilter">
 <button class="logFB on" onclick="fltLog('all',this)">الكل</button>
@@ -537,7 +534,7 @@ textarea.fInp{resize:vertical;min-height:45px}
 <div class="hdrA">
 <span class="lclk" id="eClk"></span>
 <button class="bIcon" onclick="opEmpLv()" title="طلب إجازة"><i class="fas fa-calendar-plus"></i></button>
-      <button class="bIcon" onclick="opEmpChgPass()" title="تغيير كلمة المرور"><i class="fas fa-key"></i></button>
+<button class="bIcon" onclick="opEmpChgPass()" title="تغيير كلمة المرور"><i class="fas fa-key"></i></button>
 <button class="bIcon" onclick="tgTheme()"><i class="fas fa-moon" id="thI2"></i></button>
 <button class="bIcon dng" onclick="doLogout()"><i class="fas fa-sign-out-alt"></i></button>
 </div>
@@ -607,7 +604,9 @@ textarea.fInp{resize:vertical;min-height:45px}
 <div id="toastC"></div>
 
 <script>
-['m2_acc','m2_emps','m2_set','m2_att','m2_lvs','m2_pnd','m2_nots','m2_deds','m2_advs','m2_warns','m2_logs'].forEach(k=>localStorage.removeItem(k));
+/* مسح بيانات localStorage القديمة عشان نضمن Firebase هو المصدر الوحيد */
+['m2_acc','m2_set','m2_emps','m2_att','m2_lvs','m2_pnd','m2_nots','m2_deds','m2_advs','m2_logs','m2_warns'].forEach(k=>localStorage.removeItem(k));
+
 /* ===== بيانات أساسية ===== */
 const DEF_ACC=[{u:'admin',p:'admin',r:'admin',ei:null,ln:''}];
 const DEF_SET={cn:'M2INFINITY',logo:'',wt:'09:00',wte:'17:00',dm:1,ap:50,lat:'',lng:'',gr:100,au:'admin'};
@@ -625,13 +624,13 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-/* قراءة من localStorage (كمخزن مؤقت) */
+/* قراءة القيمة الافتراضية فقط — بدون localStorage */
 function ld(k,d){return JSON.parse(JSON.stringify(d))}
 
-/* قراءة من Firebase — لو فيه إنترنت */
-async function ldFB(k,d){try{const snap=await firebase.database().ref('data/'+k).once('value');if(snap.exists()&&snap.val()!==null){const v=snap.val();const lc=ld(k,d);if(Array.isArray(lc)&&Array.isArray(v)&&lc.length>v.length){svLS(k,lc);return lc}return v}}catch(e){console.warn('Firebase read err:',k)}return ld(k,d)}
+/* قراءة من Firebase فقط */
+async function ldFB(k,d){try{const snap=await firebase.database().ref('data/'+k).once('value');if(snap.exists()&&snap.val()!==null){return snap.val()}}catch(e){console.warn('Firebase read err:',k)}return JSON.parse(JSON.stringify(d))}
 
-/* حفظ في Firebase + localStorage */
+/* حفظ في Firebase فقط */
 async function svLS(k,v){try{await firebase.database().ref('data/'+k).set(v)}catch(e){console.warn('Firebase write err:',k)}}
 
 /* المتغيرات — هتتملأ من Firebase */
@@ -670,6 +669,7 @@ function swF(t){
     const prev=localStorage.getItem('m2_reg_submitted');
     if(prev){
       try{
+        const info=JSON.parse(prev);
         const err=document.getElementById('errUser');
         err.textContent='تم تقديم طلبك وانتظار الاداره — لا يمكنك التقديم مرة أخرى';
         err.style.color='var(--ok)';
@@ -699,20 +699,21 @@ async function doLogin(){
   const p=document.getElementById('inpPass').value;
   const err=document.getElementById('errLogin');
   if(!u||!p){err.textContent='أدخل اسم المستخدم وكلمة المرور';err.classList.add('on');return}
-  try{try{var _ad=await firebase.database().ref('data/m2_acc').once('value');if(_ad.val())ACC=_ad.val()}catch(e){}}catch(e){}
+  /* تحديث ACC و EMPS من Firebase عشان نضمن أحدث البيانات */
+  try{const [_acc,_emps]=await Promise.all([ldFB('m2_acc',ACC),ldFB('m2_emps',EMPS)]);ACC=_acc;EMPS=_emps}catch(e){console.warn('Login refresh err')}
   const acc=ACC.find(a=>a.u===u&&a.p===p);
   if(!acc){err.textContent='اسم المستخدم أو كلمة المرور غير صحيحة';err.classList.add('on');return}
   err.classList.remove('on');
   if(acc.r!=='admin'&&acc.r!=='manager'&&acc.r!=='owner'&&!acc.ei){err.textContent='حسابك قيد المراجعة، انتظر موافقة المدير';err.classList.add('on');return}
-  curAcc=acc;acc.ln=new Date().toLocaleString('ar-EG');svLS('m2_acc',ACC);addLog('تسجيل دخول','تم تسجيل دخول: '+acc.u,'login');
+  curAcc=acc;acc.ln=new Date().toLocaleString('ar-EG');await svLS('m2_acc',ACC);addLog('تسجيل دخول','تم تسجيل دخول: '+acc.u,'login');
   document.getElementById('authScreen').style.display='none';
-  try{var _ed=await firebase.database().ref('data/m2_emps').once('value');if(_ed.val())EMPS=_ed.val()}catch(e){}
   if(acc.r==='admin'||acc.r==='manager'||acc.r==='owner')initAdmin();else initEmp();
   localStorage.setItem('m2_session',JSON.stringify({u:acc.u,p:acc.p}));
+  /* مسح علامة التسجيل لو كان الموظف مسجل قبل كده */
   if(acc.r==='employee')localStorage.removeItem('m2_reg_submitted');
 }
 
-function doRegister(){
+async function doRegister(){
   const nm=document.getElementById('regName').value.trim();
   const jb=document.getElementById('regJob').value.trim();
   const u=document.getElementById('regUser').value.trim();
@@ -726,18 +727,29 @@ function doRegister(){
   eu.classList.remove('on');ep.classList.remove('on');ec.classList.remove('on');
   if(!nm||!jb||!u){eu.textContent='أكمل جميع الحقول';eu.classList.add('on');ok=false}
   else if(ACC.find(a=>a.u===u)){eu.textContent='اسم المستخدم موجود بالفعل';eu.classList.add('on');ok=false}
+  else if(PND.find(p=>p.u===u)){eu.textContent='هذا الاسم مستخدم في طلب معلّق بالفعل، انتظر الرد';eu.classList.add('on');ok=false}
   if(!p||p.length<4){ep.textContent='كلمة المرور لازم 4 حروف على الأقل';ep.classList.add('on');ok=false}
   else if(p!==p2){ep.textContent='كلمتا المرور غير متطابقتين';ep.classList.add('on');ok=false}
   if(!fr||!bk){ec.textContent='ارفع صورة البطاقة (الوجهين)';ec.classList.add('on');ok=false}
   if(!ok)return;
   const code=genCode();
   PND.push({nm,jb,u,p,ph,code,fr,bk,dt:new Date().toLocaleString('ar-EG')});
-  svLS('m2_pnd',PND);
-      localStorage.setItem('m2_reg_submitted', JSON.stringify({u, nm, dt: new Date().toLocaleString('ar-EG')}));toast('تم تقديم طلبك بنجاح، انتظر موافقة المدير','success');swF('login');
+  await svLS('m2_pnd',PND);
+  /* منع إعادة التقديم */
+  localStorage.setItem('m2_reg_submitted', JSON.stringify({u, nm, dt: new Date().toLocaleString('ar-EG')}));
+  swF('login');
   document.getElementById('regName').value='';document.getElementById('regJob').value='';document.getElementById('regUser').value='';document.getElementById('regPhone').value='';document.getElementById('regPass').value='';document.getElementById('regPass2').value='';
   document.getElementById('dataFront').value='';document.getElementById('dataBack').value='';
   document.getElementById('boxFront').innerHTML='<i class="fas fa-id-card"></i><span>الوجه الأمامي *</span><input type="file" accept="image/*" onchange="upCard(this,\'front\')">';
   document.getElementById('boxBack').innerHTML='<i class="fas fa-id-card-clip"></i><span>الوجه الخلفي *</span><input type="file" accept="image/*" onchange="upCard(this,\'back\')">';
+  document.getElementById('errUser').textContent='تم تقديم الطلب وانتظار الاداره';
+  document.getElementById('errUser').style.color='var(--ok)';
+  document.getElementById('errUser').classList.add('on');
+  toast('تم تقديم طلبك وانتظار الاداره','success');
+  /* إخفاء زر إنشاء حساب جديد */
+  const regSw=document.querySelector('#frmLogin .authSw');
+  if(regSw)regSw.style.display='none';
+  setTimeout(function(){document.getElementById('errUser').classList.remove('on');document.getElementById('errUser').style.color=''},15000);
 }
 
 function doLogout(){
@@ -793,7 +805,43 @@ function initAdmin(){
     document.getElementById('btnSet').style.display='none';
     document.getElementById('btnAddEmp').style.display='none';
   }
-  rDash();upNBdg();upPBdg();startLiveDash();
+  rDash();upNBdg();upPBdg();startLiveDash();setAutoRefresh();
+}
+
+function setAutoRefresh(){
+  setInterval(async()=>{
+    try{
+      const keys=['m2_acc','m2_set','m2_emps','m2_att','m2_lvs','m2_pnd','m2_nots','m2_deds','m2_advs','m2_logs','m2_warns'];
+      const snaps=await Promise.all(keys.map(k=>firebase.database().ref('data/'+k).once('value')));
+      if(snaps[0].val()){ACC=snaps[0].val()}
+      if(snaps[1].val()){SET=snaps[1].val()}
+      if(snaps[2].val()){EMPS=snaps[2].val()}
+      if(snaps[3].val()){ATT=snaps[3].val()}
+      if(snaps[4].val()){LVS=snaps[4].val()}
+      if(snaps[5].val()){PND=snaps[5].val()}
+      if(snaps[6].val()){NOTS=snaps[6].val()}
+      if(snaps[7].val()){DEDS=snaps[7].val()}
+      if(snaps[8].val()){ADVS=snaps[8].val()}
+      if(snaps[9].val()){LOGS=snaps[9].val()}
+      if(snaps[10].val()){WARNS=snaps[10].val()}
+      rEmps();upNBdg();upPBdg();
+      if(document.getElementById('dash').classList.contains('on'))rDash();
+    }catch(e){}
+  },1500);
+}
+
+/* تحديث تلقائي لشاشة الموظف */
+function setEmpRefresh(){
+  setInterval(async()=>{
+    try{
+      const [_emps,_set,_att,_warns]=await Promise.all([
+        ldFB('m2_emps',EMPS),ldFB('m2_set',SET),ldFB('m2_att',ATT),ldFB('m2_warns',WARNS)
+      ]);
+      EMPS=_emps;SET=_set;ATT=_att;WARNS=_warns;
+      if(curEmp){const fresh=EMPS.find(e=>e.id===curEmp.id);if(fresh){Object.assign(curEmp,fresh)}
+        rEmpInfo();rEmpAtt();}
+    }catch(e){}
+  },3000);
 }
 
 function initEmp(){
@@ -803,14 +851,14 @@ function initEmp(){
   document.getElementById('eHName').textContent=SET.cn||'M2INFINITY';
   const RL_MAP={admin:'مدير النظام',owner:'صاحب عمل',manager:'مدير',employee:'موظف'};document.getElementById('eHRole').textContent=RL_MAP[curEmp.role]||curEmp.role||'موظف';
   if(SET.logo){const l=document.getElementById('eHLogo');l.src=SET.logo;l.style.display='block'}
-  rEmpInfo();rEmpAtt();
+  rEmpInfo();rEmpAtt();setEmpRefresh();
 }
 
 function rEmpInfo(){
   if(!curEmp)return;const ini=curEmp.name.split(' ').map(w=>w[0]).join('').substring(0,2);
   let avH='<div class="eAvB">'+ini+'</div>';if(curEmp.photo)avH='<img src="'+curEmp.photo+'">';
   document.getElementById('eInfoC').innerHTML='<div class="eAvW" onclick="document.getElementById(\'ePhIn\').click()">'+avH+'<div class="eOv"><i class="fas fa-camera" style="color:#fff;font-size:20px"></i></div></div><h2>'+curEmp.name+'</h2><p class="jT">'+curEmp.job+' — كود: '+curEmp.code+'</p>';
-  document.getElementById('ePhIn').onchange=function(f){const file=f.target.files[0];if(!file)return;const rd=new FileReader();rd.onload=function(ev){curEmp.photo=ev.target.result;svLS('m2_emps',EMPS);rEmpInfo();toast('تم تحديث الصورة','success')};rd.readAsDataURL(file)};
+  document.getElementById('ePhIn').onchange=function(f){const file=f.target.files[0];if(!file)return;const rd=new FileReader();rd.onload=function(ev){curEmp.photo=ev.target.result;svLS('m2_emps',EMPS).then(()=>{rEmpInfo();toast('تم تحديث الصورة','success')})};rd.readAsDataURL(file)};
 }
 
 function rDash(){
@@ -858,20 +906,19 @@ function opEmpM(editId){
 }
 function edEmp(id){opEmpM(id)}
 
-function svEmp(){
+async function svEmp(){
   const id=document.getElementById('eEId').value;const nm=document.getElementById('eNm').value.trim();const cd=document.getElementById('eCd').value.trim();const jb=document.getElementById('eJb').value.trim();const ph=document.getElementById('ePh').value.trim();const bs=parseFloat(document.getElementById('eBs').value)||0;const rl=document.getElementById('eRl').value;
   if(!nm||!jb){toast('أكمل الاسم والوظيفة','error');return}
   if(id){const e=EMPS.find(x=>x.id===id);if(e){e.name=nm;e.job=jb;e.phone=ph;e.salary=bs;e.role=rl}}
   else{if(!cd){toast('الكود مطلوب','error');return}EMPS.push({id:'e'+Date.now(),name:nm,code:cd,job:jb,phone:ph,salary:bs,role:rl,photo:'',cardFront:'',cardBack:''})}
-  svLS('m2_emps',EMPS);cM('mEmp');rEmps();
+  await svLS('m2_emps',EMPS);cM('mEmp');rEmps();
   if(id){addLog('تعديل موظف','تم تعديل بيانات الموظف: '+nm,'edit')}else{addLog('إضافة موظف','تم إضافة موظف جديد: '+nm,'add')}
   toast('تم الحفظ','success');
 }
 
 function dlEmp(id){const e=EMPS.find(x=>x.id===id);if(!e)return;document.getElementById('delMsg').textContent='هل تريد حذف الموظف "'+e.name+'"؟';document.getElementById('mDel').dataset.eid=id;document.getElementById('mDel').dataset.enm=e.name;oM('mDel')}
 async function cfDel(){
-  const id=document.getElementById('mDel').dataset.eid;EMPS=EMPS.filter(e=>e.id!==id);ATT=ATT.filter(a=>a.eid!==id);LVS=LVS.filter(l=>l.eid!==id);DEDS=DEDS.filter(d=>d.eid!==id);ADVS=ADVS.filter(a=>a.eid!==id);ACC=ACC.filter(a=>a.ei!==id);WARNS=WARNS.filter(w=>w.eid!==id);
-  const delNm=document.getElementById('mDel').dataset.enm||'';NOTS=NOTS.filter(x=>!x.m||!x.m.includes(delNm));
+  const id=document.getElementById('mDel').dataset.eid;EMPS=EMPS.filter(e=>e.id!==id);ATT=ATT.filter(a=>a.eid!==id);LVS=LVS.filter(l=>l.eid!==id);DEDS=DEDS.filter(d=>d.eid!==id);ADVS=ADVS.filter(a=>a.eid!==id);ACC=ACC.filter(a=>a.ei!==id);WARNS=WARNS.filter(w=>w.eid!==id);NOTS=NOTS.filter(n=>!n.m||!n.m.includes(document.getElementById('mDel').dataset.enm||''));
   await Promise.all([svLS('m2_emps',EMPS),svLS('m2_att',ATT),svLS('m2_lvs',LVS),svLS('m2_deds',DEDS),svLS('m2_advs',ADVS),svLS('m2_acc',ACC),svLS('m2_warns',WARNS),svLS('m2_nots',NOTS)]);cM('mDel');rEmps();
   addLog('حذف موظف','تم حذف الموظف: '+(document.getElementById('mDel').dataset.enm||''),'del');
   toast('تم الحذف','success');
@@ -890,29 +937,29 @@ async function accPend(idx,ok){
   const p=PND[idx];if(!p)return;
   if(ok){const eid='e'+Date.now();EMPS.push({id:eid,name:p.nm,code:p.code,job:p.job,salary:0,role:'employee',phone:p.ph||'',photo:'',cardFront:p.fr,cardBack:p.bk});ACC.push({u:p.u,p:p.p,r:'employee',ei:eid,ln:''});addNot('تم قبول حساب الموظف: '+p.nm,'login');addLog('قبول حساب','تم قبول حساب الموظف: '+p.nm,'add');toast('تم قبول '+p.nm,'success')}
   else{toast('تم رفض طلب '+p.nm,'warning')}
-  PND.splice(idx,1);await Promise.all([svLS('m2_pnd',PND),svLS('m2_emps',EMPS),svLS('m2_acc',ACC)]);upPBdg();opPend();if(ok)opAccM();
+  PND.splice(idx,1);await Promise.all([svLS('m2_pnd',PND),svLS('m2_emps',EMPS),svLS('m2_acc',ACC)]);upPBdg();opPend();
 }
 
 function opAccM(){
   const nonAdmin=ACC.filter(a=>a.r!=='admin');
   if(!nonAdmin.length){document.getElementById('accList').innerHTML='<div class="emSt"><i class="fas fa-user-shield"></i>لا توجد حسابات أخرى</div>';oM('mAcc');return}
   const rlMap={admin:'مدير نظام',owner:'صاحب عمل',manager:'مدير',employee:'موظف'};
-  document.getElementById('accList').innerHTML=nonAdmin.map(a=>{const emp=EMPS.find(e=>e.id===a.ei);const nm=emp?emp.name:'غير مرتبط';const rl=rlMap[a.r]||a.r;return '<div class="accRow"><div class="pndAv" style="background:linear-gradient(135deg,var(--p),var(--inf))">'+nm.split(' ').map(w=>w[0]).join('').substring(0,2)+'</div><div class="accInf"><h4>'+nm+'</h4><p>المستخدم: '+a.u+' — '+rl+(a.ln?' — آخر دخول: '+a.ln:'')+'</p></div><div class="accAct"><button class="bSm bW" onclick="opChgPass('+ACC.indexOf(a)+')"><i class="fas fa-key"></i> تعديل</button></div></div>'}).join('');
+  document.getElementById('accList').innerHTML=nonAdmin.map(a=>{const emp=EMPS.find(e=>e.id===a.ei);const nm=emp?emp.name:'غير مرتبط';const rl=rlMap[a.r]||a.r;return '<div class="accRow"><div class="pndAv" style="background:linear-gradient(135deg,var(--p),var(--inf))">'+nm.split(' ').map(w=>w[0]).join('').substring(0,2)+'</div><div class="accInf"><h4>'+nm+'</h4><p>المستخدم: '+a.u+' — '+rl+(a.ln?' — آخر دخول: '+a.ln:'')+'</p></div><div class="accAct"><button class="bSm bW" onclick="opChgPass(\''+a.u+'\')"><i class="fas fa-key"></i> تعديل</button></div></div>'}).join('');
   oM('mAcc');
 }
 
-function opChgPass(accIdx){const a=ACC[accIdx];if(!a)return;document.getElementById('cpIdx').value=accIdx;document.getElementById('cpUser').value=a.u;document.getElementById('cpNew').value='';document.getElementById('cpNew2').value='';oM('mChgPass')}
+function opChgPass(accUser){const a=ACC.find(x=>x.u===accUser);if(!a)return;document.getElementById('cpIdx').value=accUser;document.getElementById('cpUser').value=a.u;document.getElementById('cpNew').value='';document.getElementById('cpNew2').value='';oM('mChgPass')}
 
-function svChgPass(){
-  const idx=parseInt(document.getElementById('cpIdx').value);const newUser=document.getElementById('cpUser').value.trim();const np=document.getElementById('cpNew').value;const np2=document.getElementById('cpNew2').value;const a=ACC[idx];if(!a)return;
-  if(newUser&&newUser!==a.u){if(ACC.some((x,i)=>i!==idx&&x.u===newUser)){toast('اسم المستخدم موجود بالفعل','error');return}a.u=newUser}
+async function svChgPass(){
+  const accUser=document.getElementById('cpIdx').value;const a=ACC.find(x=>x.u===accUser);if(!a)return;const newUser=document.getElementById('cpUser').value.trim();const np=document.getElementById('cpNew').value;const np2=document.getElementById('cpNew2').value;
+  if(newUser&&newUser!==a.u){if(ACC.some(x=>x.u===newUser&&x!==a)){toast('اسم المستخدم موجود بالفعل','error');return}a.u=newUser}
   if(np){if(np.length<4){toast('كلمة المرور لازم 4 حروف على الأقل','error');return}if(np!==np2){toast('كلمتا المرور غير متطابقتين','error');return}a.p=np}
   if(!newUser&&!np){toast('لم يتم تغيير شيء','warning');return}
-  svLS('m2_acc',ACC);cM('mChgPass');toast('تم تحديث الحساب','success');if(a.r!=='admin')opAccM();
+  await svLS('m2_acc',ACC);cM('mChgPass');toast('تم تحديث الحساب','success');if(a.r!=='admin')opAccM();
 }
 
 /* ===== الإشعارات ===== */
-function addNot(msg,type='info'){NOTS.unshift({m:msg,t:type,d:new Date().toLocaleString('ar-EG'),r:false,id:Date.now()});if(NOTS.length>200)NOTS=NOTS.slice(0,200);svLS('m2_nots',NOTS);upNBdg();const nTab=document.querySelector('#adminTabs .tBtn:nth-child(7)');if(nTab)nTab.classList.add('hasN')}
+async function addNot(msg,type='info'){NOTS.unshift({m:msg,t:type,d:new Date().toLocaleString('ar-EG'),r:false,id:Date.now()});if(NOTS.length>200)NOTS=NOTS.slice(0,200);await svLS('m2_nots',NOTS);upNBdg();const nTab=document.querySelector('#adminTabs .tBtn:nth-child(7)');if(nTab)nTab.classList.add('hasN')}
 function upNBdg(){const unr=NOTS.filter(n=>!n.r).length;const b=document.getElementById('nBdg');if(unr>0){b.style.display='flex';b.textContent=unr}else{b.style.display='none'}}
 
 function tgND(){nDropOpen=!nDropOpen;document.getElementById('nDrop').classList.toggle('on',nDropOpen);if(nDropOpen)rNDrop()}
@@ -930,7 +977,7 @@ function renderNDrop(type){
   const clMap={delay:'var(--ac)',absence:'var(--err)',salary:'var(--ok)',leave:'var(--inf)',advance:'var(--ac)',login:'var(--p)'};
   lst.innerHTML=list.map(n=>{const ic=icMap[n.t]||'fa-bell';const cl=clMap[n.t]||'var(--p)';return '<div class="nIt'+(n.r?'':' ur')+'"><div class="nIC" style="background:'+cl+'22;color:'+cl+'"><i class="fas '+ic+'"></i></div><div class="nBD"><div class="nM">'+n.m+'</div><div class="nT">'+n.d+'</div></div></div>'}).join('');
 }
-function readAll(){NOTS.forEach(n=>n.r=true);svLS('m2_nots',NOTS);upNBdg();rNDrop();const nTab=document.querySelector('#adminTabs .tBtn:nth-child(7)');if(nTab)nTab.classList.remove('hasN')}
+async function readAll(){NOTS.forEach(n=>n.r=true);await svLS('m2_nots',NOTS);upNBdg();rNDrop();const nTab=document.querySelector('#adminTabs .tBtn:nth-child(7)');if(nTab)nTab.classList.remove('hasN')}
 
 function opNFull(){
   nDropOpen=false;document.getElementById('nDrop').classList.remove('on');
@@ -942,31 +989,31 @@ function opNFull(){
   oM('mNFull');
 }
 
-function rNTab(){
+async function rNTab(){
   const type=document.getElementById('nTF').value;let list=NOTS;if(type!=='all')list=list.filter(n=>n.t===type);
-  list.forEach(n=>n.r=true);svLS('m2_nots',NOTS);upNBdg();const nTab=document.querySelector('#adminTabs .tBtn:nth-child(7)');if(nTab)nTab.classList.remove('hasN');
+  list.forEach(n=>n.r=true);await svLS('m2_nots',NOTS);upNBdg();const nTab=document.querySelector('#adminTabs .tBtn:nth-child(7)');if(nTab)nTab.classList.remove('hasN');
   if(!list.length){document.getElementById('nTL').innerHTML='<div class="emSt"><i class="fas fa-bell-slash"></i>لا إشعارات</div>';return}
   const icMap={delay:'fa-clock',absence:'fa-user-times',salary:'fa-money-bill',leave:'fa-calendar-minus',advance:'fa-hand-holding-usd',login:'fa-sign-in-alt'};
   const clMap={delay:'var(--ac)',absence:'var(--err)',salary:'var(--ok)',leave:'var(--inf)',advance:'var(--ac)',login:'var(--p)'};
   document.getElementById('nTL').innerHTML='<div class="nmLst">'+list.map(n=>{const ic=icMap[n.t]||'fa-bell';const cl=clMap[n.t]||'var(--p)';return '<div class="nmIt"><div class="nmIC" style="background:'+cl+'22;color:'+cl+'"><i class="fas '+ic+'"></i></div><div class="nmBD"><div class="nmM">'+n.m+'</div><div class="nmMt"><span>'+n.d+'</span></div></div></div>'}).join('')+'</div>';
 }
-function clrNots(){NOTS=[];svLS('m2_nots',NOTS);upNBdg();rNTab();toast('تم مسح كل الإشعارات','success');const nTab=document.querySelector('#adminTabs .tBtn:nth-child(7)');if(nTab)nTab.classList.remove('hasN')}
+async function clrNots(){NOTS=[];await svLS('m2_nots',NOTS);upNBdg();rNTab();toast('تم مسح كل الإشعارات','success');const nTab=document.querySelector('#adminTabs .tBtn:nth-child(7)');if(nTab)nTab.classList.remove('hasN')}
 
 /* ===== الحضور ===== */
 function fillAttSels(){const opts=EMPS.map(e=>'<option value="'+e.id+'">'+e.name+' ('+e.code+')</option>').join('');['gSel','qSel','mSel'].forEach(id=>{const el=document.getElementById(id);el.innerHTML='<option value="">-- اختر --</option>'+opts})}
 
 function uAS(type){const sel=type==='g'?document.getElementById('gSel'):document.getElementById('mSel');const st=type==='g'?document.getElementById('gAS'):document.getElementById('mAS');if(sel.value){st.className='aSt ci';st.textContent='جاهز للتسجيل'}else{st.className='aSt no';st.textContent='اختر موظف'}}
 
-function doGPS(){
+async function doGPS(){
   const eid=document.getElementById('gSel').value;if(!eid){toast('اختر موظف','error');return}
   if(!SET.lat||!SET.lng){toast('حدد إحداثيات الشركة في الإعدادات أولاً','error');return}
   if(!navigator.geolocation){toast('المتصفح لا يدعم GPS','error');return}
   document.getElementById('gSt').textContent='جاري تحديد الموقع...';document.getElementById('gSt').style.color='var(--inf)';
-  navigator.geolocation.getCurrentPosition(function(pos){
+  navigator.geolocation.getCurrentPosition(async function(pos){
     const lat=pos.coords.latitude;const lng=pos.coords.longitude;const dist=getDist(lat,lng,parseFloat(SET.lat),parseFloat(SET.lng));
     document.getElementById('gCo').textContent='مسافتك: '+Math.round(dist)+' متر';const maxR=parseFloat(SET.gr)||100;
     if(dist>maxR){document.getElementById('gSt').textContent='بعيد عن الشركة ('+Math.round(dist)+'م > '+maxR+'م)';document.getElementById('gSt').style.color='var(--err)';addNot('محاولة حضور GPS مرفوضة — مسافة '+Math.round(dist)+'م','absence');return}
-    regAtt(eid,'gps',lat+','+lng);document.getElementById('gSt').textContent='تم التسجيل بنجاح';document.getElementById('gSt').style.color='var(--ok)';
+    await regAtt(eid,'gps',lat+','+lng);document.getElementById('gSt').textContent='تم التسجيل بنجاح';document.getElementById('gSt').style.color='var(--ok)';
   },function(err){document.getElementById('gSt').textContent='خطأ في تحديد الموقع';document.getElementById('gSt').style.color='var(--err)';toast('تعذر تحديد الموقع','error')},{enableHighAccuracy:true});
 }
 
@@ -982,7 +1029,7 @@ function genQR(){
 }
 
 /* ★★★ UPC بالزرارين — حضور / انصراف ★★★ */
-function doUPC(type){
+async function doUPC(type){
   const code=document.getElementById('upcIn').value.trim();
   const st=document.getElementById('upcSt');
   if(!code){toast('أدخل كود UPC','error');return}
@@ -994,7 +1041,7 @@ function doUPC(type){
     const today=new Date().toISOString().split('T')[0];
     const existing=ATT.find(a=>a.eid===emp.id&&a.date===today);
     if(existing&&existing.ci){st.textContent='مسجل حضور بالفعل اليوم!';st.style.color='var(--ac)';return}
-    regAtt(emp.id,'upc',code);
+    await regAtt(emp.id,'upc',code);
     st.textContent='حضور: '+emp.name;st.style.color='var(--ok)';
   }else{
     /* تسجيل انصراف */
@@ -1002,20 +1049,20 @@ function doUPC(type){
     const existing=ATT.find(a=>a.eid===emp.id&&a.date===today);
     if(!existing||!existing.ci){st.textContent='لم يسجل حضور بعد!';st.style.color='var(--err)';return}
     if(existing.co){st.textContent='مسجل انصراف بالفعل!';st.style.color='var(--ac)';return}
-    regAttOut(emp.id,'upc',code);
+    await regAttOut(emp.id,'upc',code);
     st.textContent='انصراف: '+emp.name;st.style.color='var(--inf)';
   }
   document.getElementById('upcIn').value='';
 }
 
-function doMan(type){
+async function doMan(type){
   const eid=document.getElementById('mSel').value;if(!eid){toast('اختر موظف','error');return}
   const emp=EMPS.find(e=>e.id===eid);
-  if(type==='in'){regAtt(eid,'manual','');toast('تم تسجيل حضور '+emp.name,'success')}
-  else{regAttOut(eid,'manual','');toast('تم تسجيل انصراف '+emp.name,'success')}
+  if(type==='in'){await regAtt(eid,'manual','');toast('تم تسجيل حضور '+emp.name,'success')}
+  else{await regAttOut(eid,'manual','');toast('تم تسجيل انصراف '+emp.name,'success')}
 }
 
-function regAtt(eid,method,extra){
+async function regAtt(eid,method,extra){
   const today=new Date().toISOString().split('T')[0];const now=new Date();const time=now.toLocaleTimeString('ar-EG',{hour:'2-digit',minute:'2-digit'});
   let rec=ATT.find(a=>a.eid===eid&&a.date===today);
   if(!rec){
@@ -1024,12 +1071,12 @@ function regAtt(eid,method,extra){
     ATT.push(rec);if(rec.delay>0)addNot('تأخير: '+getEmpName(eid)+' — '+rec.delay+' دقيقة','delay');
     addLog('تسجيل حضور','حضور '+getEmpName(eid)+' — '+time+' ('+method+')','other');
   }else if(!rec.co){rec.co=time;rec.coM=method;rec.coX=extra;addLog('تسجيل انصراف','انصراف '+getEmpName(eid)+' — '+time+' ('+method+')','other')}
-  svLS('m2_att',ATT);
+  await svLS('m2_att',ATT);
 }
 
-function regAttOut(eid,method,extra){
+async function regAttOut(eid,method,extra){
   const today=new Date().toISOString().split('T')[0];const time=new Date().toLocaleTimeString('ar-EG',{hour:'2-digit',minute:'2-digit'});
-  const rec=ATT.find(a=>a.eid===eid&&a.date===today);if(rec){rec.co=time;rec.coM=method;rec.coX=extra;svLS('m2_att',ATT)}
+  const rec=ATT.find(a=>a.eid===eid&&a.date===today);if(rec){rec.co=time;rec.coM=method;rec.coX=extra;await svLS('m2_att',ATT)}
 }
 
 function rAttL(){
@@ -1051,16 +1098,16 @@ function rLvs(){
   document.getElementById('lvPg').innerHTML=pgH;
 }
 
-function opLvM(){document.getElementById('lvE').innerHTML='<option value="">-- اختر --</option>'+EMPS.map(e=>'<option value="'+e.id+'">'+e.name+'</option>').join('');document.getElementById('lvS').value='';document.getElementById('lvE2').value='';document.getElementById('lvR').value='';oM('mLv')}
+function opLvM(){const lvEGrp=document.getElementById('lvE').closest('.fGrp');if(lvEGrp)lvEGrp.style.display='';document.getElementById('lvE').innerHTML='<option value="">-- اختر --</option>'+EMPS.map(e=>'<option value="'+e.id+'">'+e.name+'</option>').join('');document.getElementById('lvS').value='';document.getElementById('lvE2').value='';document.getElementById('lvR').value='';oM('mLv')}
 
-function svLv(){
+async function svLv(){
   const eid=document.getElementById('lvE').value;const type=document.getElementById('lvT').value;const from=document.getElementById('lvS').value;const to=document.getElementById('lvE2').value;const reason=document.getElementById('lvR').value.trim();
   if(!eid||!from||!to){toast('أكمل البيانات','error');return}
   const d1=new Date(from);const d2=new Date(to);const days=Math.max(1,Math.ceil((d2-d1)/(1000*60*60*24))+1);
-  LVS.push({id:'l'+Date.now(),eid,type,from,to,days,reason,status:'pending'});svLS('m2_lvs',LVS);cM('mLv');rLvs();toast('تم تقديم طلب الإجازة','success');addNot('طلب إجازة جديد: '+getEmpName(eid)+' — '+days+' يوم','leave');addLog('طلب إجازة','إجازة '+getEmpName(eid)+' — '+days+' يوم','add');
+  LVS.push({id:'l'+Date.now(),eid,type,from,to,days,reason,status:'pending'});await svLS('m2_lvs',LVS);cM('mLv');rLvs();toast('تم تقديم طلب الإجازة','success');addNot('طلب إجازة جديد: '+getEmpName(eid)+' — '+days+' يوم','leave');addLog('طلب إجازة','إجازة '+getEmpName(eid)+' — '+days+' يوم','add');
 }
 
-function actLv(id,status){const l=LVS.find(x=>x.id===id);if(!l)return;l.status=status;svLS('m2_lvs',LVS);rLvs();addNot('طلب إجازة '+(status==='approved'?'مقبول':'مرفوض')+': '+getEmpName(l.eid),'leave');addLog('تحديث إجازة',(status==='approved'?'قبول':'رفض')+' إجازة '+getEmpName(l.eid),status==='approved'?'edit':'del');toast('تم تحديث حالة الإجازة','success')}
+async function actLv(id,status){const l=LVS.find(x=>x.id===id);if(!l)return;l.status=status;await svLS('m2_lvs',LVS);rLvs();addNot('طلب إجازة '+(status==='approved'?'مقبول':'مرفوض')+': '+getEmpName(l.eid),'leave');addLog('تحديث إجازة',(status==='approved'?'قبول':'رفض')+' إجازة '+getEmpName(l.eid),status==='approved'?'edit':'del');toast('تم تحديث حالة الإجازة','success')}
 
 /* ===== الرواتب ===== */
 function fillSalMon(){const sel=document.getElementById('sMon');const now=new Date();let h='';for(let i=0;i<12;i++){const d=new Date(now.getFullYear(),now.getMonth()-i,1);const v=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');const l=d.toLocaleDateString('ar-EG',{month:'long',year:'numeric'});h+='<option value="'+v+'"'+(i===0?' selected':'')+'>'+l+'</option>'}sel.innerHTML=h}
@@ -1077,10 +1124,10 @@ function calcManDed(eid,mon){return DEDS.filter(d=>d.eid===eid&&d.mon===mon).red
 function calcAdv(eid,mon){return ADVS.filter(a=>a.eid===eid&&a.mon===mon).reduce((s,a)=>s+a.am,0)}
 function getDaysInMon(mon){const [y,m]=mon.split('-').map(Number);const days=[];const d=new Date(y,m,0).getDate();for(let i=1;i<=d;i++)days.push(y+'-'+String(m).padStart(2,'0')+'-'+String(i).padStart(2,'0'));return days}
 
-function opDed(eid){document.getElementById('dEId').value=eid;document.getElementById('dAm').value='';document.getElementById('dRs').value='';oM('mDed')}
+async function opDed(eid){document.getElementById('dEId').value=eid;document.getElementById('dAm').value='';document.getElementById('dRs').value='';oM('mDed')}
 async function svDed(){const eid=document.getElementById('dEId').value;const am=parseFloat(document.getElementById('dAm').value)||0;const rs=document.getElementById('dRs').value.trim();const mon=document.getElementById('sMon').value;if(am<=0){toast('أدخل مبلغ صحيح','error');return}DEDS.push({eid,am,rs,mon,id:'d'+Date.now()});await svLS('m2_deds',DEDS);cM('mDed');rSals();toast('تم تسجيل الخصم','success');addLog('خصم يدوي','خصم '+fmtM(am)+' من '+getEmpName(eid)+(rs?' — '+rs:''),'other')}
-function opAdv(eid){document.getElementById('aEId').value=eid;document.getElementById('aAm').value='';document.getElementById('aRs').value='';oM('mAdv')}
-function svAdv(){const eid=document.getElementById('aEId').value;const am=parseFloat(document.getElementById('aAm').value)||0;const rs=document.getElementById('aRs').value.trim();const mon=document.getElementById('sMon').value;const emp=EMPS.find(e=>e.id===eid);const maxP=parseFloat(SET.ap)||50;const maxA=emp?(emp.salary*maxP/100):0;if(am<=0){toast('أدخل مبلغ صحيح','error');return}if(am>maxA){toast('السلفة تتجاوز الحد المسموح ('+fmtM(maxA)+')','error');return}ADVS.push({eid,am,rs,mon,id:'a'+Date.now()});svLS('m2_advs',ADVS);cM('mAdv');rSals();toast('تم صرف السلفة','success');addNot('سلفة: '+getEmpName(eid)+' — '+fmtM(am),'advance');addLog('صرف سلفة','سلفة '+fmtM(am)+' لـ '+getEmpName(eid)+(rs?' — '+rs:''),'other')}
+async function opAdv(eid){document.getElementById('aEId').value=eid;document.getElementById('aAm').value='';document.getElementById('aRs').value='';oM('mAdv')}
+async function svAdv(){const eid=document.getElementById('aEId').value;const am=parseFloat(document.getElementById('aAm').value)||0;const rs=document.getElementById('aRs').value.trim();const mon=document.getElementById('sMon').value;const emp=EMPS.find(e=>e.id===eid);const maxP=parseFloat(SET.ap)||50;const maxA=emp?(emp.salary*maxP/100):0;if(am<=0){toast('أدخل مبلغ صحيح','error');return}if(am>maxA){toast('السلفة تتجاوز الحد المسموح ('+fmtM(maxA)+')','error');return}ADVS.push({eid,am,rs,mon,id:'a'+Date.now()});await svLS('m2_advs',ADVS);cM('mAdv');rSals();toast('تم صرف السلفة','success');addNot('سلفة: '+getEmpName(eid)+' — '+fmtM(am),'advance');addLog('صرف سلفة','سلفة '+fmtM(am)+' لـ '+getEmpName(eid)+(rs?' — '+rs:''),'other')}
 
 /* ===== التقارير ===== */
 function rRpt(){
@@ -1109,18 +1156,27 @@ function rEmpAtt(){
   if(recent.length){html+='<table class="mTb"><thead><tr><th>التاريخ</th><th>حضور</th><th>انصراف</th><th>تأخير</th></tr></thead><tbody>';recent.forEach(r=>{html+='<tr><td>'+r.date+'</td><td>'+(r.ci||'—')+'</td><td>'+(r.co||'—')+'</td><td>'+(r.delay>0?'<span style="color:var(--err)">'+r.delay+'د</span>':'0')+'</td></tr>'});html+='</tbody></table>'}
   document.getElementById('eASec').innerHTML=html;
 }
-function empCheckIn(){if(!curEmp)return;regAtt(curEmp.id,'manual','');rEmpAtt();toast('تم تسجيل الحضور','success')}
-function empCheckOut(){if(!curEmp)return;regAttOut(curEmp.id,'manual','');rEmpAtt();toast('تم تسجيل الانصراف','success')}
+function empCheckIn(){if(!curEmp)return;regAtt(curEmp.id,'manual','').then(()=>rEmpAtt());toast('تم تسجيل الحضور','success')}
+function empCheckOut(){if(!curEmp)return;regAttOut(curEmp.id,'manual','').then(()=>rEmpAtt());toast('تم تسجيل الانصراف','success')}
 
 function rEmpSal(){
   if(!curEmp)return;const now=new Date();const mon=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');const base=curEmp.salary||0;const delayD=calcDelayDed(curEmp.id,mon);const manD=calcManDed(curEmp.id,mon);const adv=calcAdv(curEmp.id,mon);const net=Math.max(0,base-delayD-manD-adv);
   document.getElementById('eSSec').innerHTML='<div class="salDC"><div class="salDH">كشف راتب — '+now.toLocaleDateString('ar-EG',{month:'long',year:'numeric'})+'</div><div class="salDB"><div class="sRow"><div class="sRL"><i class="fas fa-money-bill"></i> الراتب الأساسي</div><div class="sV">'+fmtM(base)+'</div></div><div class="sRow dd"><div class="sRL"><i class="fas fa-clock"></i> خصم تأخير</div><div class="sV">-'+fmtM(delayD)+'</div></div>'+(manD>0?'<div class="sRow dd"><div class="sRL"><i class="fas fa-minus-circle"></i> خصومات يدوية</div><div class="sV">-'+fmtM(manD)+'</div></div>':'')+(adv>0?'<div class="sRow dd"><div class="sRL"><i class="fas fa-hand-holding-usd"></i> سلفة</div><div class="sV">-'+fmtM(adv)+'</div></div>':'')+'<div class="sRow tot"><div class="sRL"><i class="fas fa-wallet"></i> الصافي</div><div class="sV">'+fmtM(net)+'</div></div></div></div>';
 }
 
+function opEmpLv(){
+  if(!curEmp)return;
+  document.getElementById('lvE').innerHTML='<option value="'+curEmp.id+'" selected>'+curEmp.name+'</option>';
+  document.getElementById('lvE').closest('.fGrp').style.display='none';
+  document.getElementById('lvS').value='';document.getElementById('lvE2').value='';document.getElementById('lvR').value='';
+  oM('mLv');
+}
 function rEmpLv(){
   if(!curEmp)return;const myLvs=LVS.filter(l=>l.eid===curEmp.id);const tMap={annual:'اعتيادية',sick:'مرضية'};const sMap={pending:'معلّق',approved:'مقبول',rejected:'مرفوض'};
-  if(!myLvs.length){document.getElementById('eLSec').innerHTML='<div class="emSt"><i class="fas fa-calendar-alt"></i>لا إجازات</div>';return}
-  document.getElementById('eLSec').innerHTML='<table class="mTb"><thead><tr><th>النوع</th><th>من</th><th>إلى</th><th>الأيام</th><th>الحالة</th></tr></thead><tbody>'+myLvs.map(l=>'<tr><td>'+(tMap[l.type]||l.type)+'</td><td>'+l.from+'</td><td>'+l.to+'</td><td>'+l.days+'</td><td><span class="lBdg '+l.status+'">'+sMap[l.status]+'</span></td></tr>').join('')+'</tbody></table>';
+  let h='<div style="margin-bottom:12px"><button class="bP bS" onclick="opEmpLv()"><i class="fas fa-plus"></i> طلب إجازة جديدة</button></div>';
+  if(!myLvs.length){h+='<div class="emSt"><i class="fas fa-calendar-alt"></i>لا إجازات</div>';document.getElementById('eLSec').innerHTML=h;return}
+  h+='<table class="mTb"><thead><tr><th>النوع</th><th>من</th><th>إلى</th><th>الأيام</th><th>الحالة</th></tr></thead><tbody>'+myLvs.map(l=>'<tr><td>'+(tMap[l.type]||l.type)+'</td><td>'+l.from+'</td><td>'+l.to+'</td><td>'+l.days+'</td><td><span class="lBdg '+l.status+'">'+sMap[l.status]+'</span>'+(l.rejReason?' <span style="font-size:8px;color:var(--mt)">('+l.rejReason+')</span>':'')+'</td></tr>').join('')+'</tbody></table>';
+  document.getElementById('eLSec').innerHTML=h;
 }
 
 function rEmpFin(){
@@ -1141,10 +1197,11 @@ function opSet(){
 
 function upLogo(inp){const f=inp.files[0];if(!f)return;const r=new FileReader();r.onload=function(e){SET.logo=e.target.result;document.getElementById('logoPV').innerHTML='<img src="'+e.target.result+'">'};r.readAsDataURL(f)}
 
-function svSet(){
-  SET.cn=document.getElementById('stCn').value.trim()||'M2INFINITY';SET.wt=document.getElementById('stWT').value;SET.wte=document.getElementById('stWTE').value;SET.dm=parseFloat(document.getElementById('stDM').value)||1;SET.ap=parseFloat(document.getElementById('stAP').value)||50;SET.lat=document.getElementById('stLat').value;SET.lng=document.getElementById('stLng').value;SET.gr=parseFloat(document.getElementById('stGR').value)||100;SET.w3a=document.getElementById('stW3A').value;SET.w3d=parseInt(document.getElementById('stW3D').value)||3;SET.w3p=parseFloat(document.getElementById('stW3P').value)||10;svLS('m2_set',SET);
+async function svSet(){
+  SET.cn=document.getElementById('stCn').value.trim()||'M2INFINITY';SET.wt=document.getElementById('stWT').value;SET.wte=document.getElementById('stWTE').value;SET.dm=parseFloat(document.getElementById('stDM').value)||1;SET.ap=parseFloat(document.getElementById('stAP').value)||50;SET.lat=document.getElementById('stLat').value;SET.lng=document.getElementById('stLng').value;SET.gr=parseFloat(document.getElementById('stGR').value)||100;SET.w3a=document.getElementById('stW3A').value;SET.w3d=parseInt(document.getElementById('stW3D').value)||3;SET.w3p=parseFloat(document.getElementById('stW3P').value)||10;
   const newU=document.getElementById('stAdmU').value.trim();const newP=document.getElementById('stAdmP').value;const newP2=document.getElementById('stAdmP2').value;const adm=ACC.find(a=>a.r==='admin');
-  if(adm){if(newU&&newU!==adm.u){if(ACC.some(a=>a.u===newU&&a.r!=='admin')){toast('اسم المستخدم موجود','error');return}SET.au=newU;adm.u=newU}if(newP){if(newP.length<4){toast('كلمة المرور لازم 4 حروف','error');return}if(newP!==newP2){toast('كلمتا المرور غير متطابقتين','error');return}adm.p=newP}svLS('m2_acc',ACC);svLS('m2_set',SET)}
+  if(adm){if(newU&&newU!==adm.u){if(ACC.some(a=>a.u===newU&&a.r!=='admin')){toast('اسم المستخدم موجود','error');return}SET.au=newU;adm.u=newU}if(newP){if(newP.length<4){toast('كلمة المرور لازم 4 حروف','error');return}if(newP!==newP2){toast('كلمتا المرور غير متطابقتين','error');return}adm.p=newP}}
+  await svLS('m2_set',SET);if(adm){await svLS('m2_acc',ACC)}
   document.getElementById('hdrName').textContent=SET.cn;if(SET.logo){const l=document.getElementById('hdrLogo');l.src=SET.logo;l.style.display='block'}cM('mSet');addLog('تعديل الإعدادات','تم تحديث إعدادات النظام','other');toast('تم حفظ الإعدادات','success');
 }
 
@@ -1165,12 +1222,12 @@ function fmtM(n){return Number(n||0).toLocaleString('ar-EG')}
 
 
 /* ===== Audit Log ===== */
-function addLog(action, details, type){
+async function addLog(action, details, type){
   if(!type)type='other';
   const who = curAcc ? curAcc.u : 'النظام';
   LOGS.unshift({action, details, type, who, time: new Date().toLocaleString('ar-EG'), ts: Date.now()});
   if(LOGS.length > 500) LOGS.length = 500;
-  svLS('m2_logs', LOGS);
+  await svLS('m2_logs', LOGS);
 }
 
 function fltLog(f, btn){
@@ -1293,14 +1350,15 @@ function doRestore(inp){
   if(!f) return;
   if(!confirm('سيتم استبدال جميع البيانات الحالية بالنسخة الاحتياطية. متأكد؟')){inp.value='';return}
   const r = new FileReader();
-  r.onload = function(e){
+  r.onload = async function(e){
     try {
       const data = JSON.parse(e.target.result);
       if(!data.m2_acc || !data.m2_emps){toast('ملف النسخة غير صالح','error');return}
       const keys = ['m2_acc','m2_set','m2_emps','m2_att','m2_lvs','m2_pnd','m2_nots','m2_deds','m2_advs','m2_logs','m2_warns'];
+      const savePromises = [];
       keys.forEach(k => {
         if(data[k] !== undefined){
-          try{firebase.database().ref("data/"+k).set(data[k])}catch(e){};
+          savePromises.push(firebase.database().ref('data/'+k).set(data[k]));
           if(k==='m2_acc') ACC=data[k];
           if(k==='m2_set') SET=data[k];
           if(k==='m2_emps') EMPS=data[k];
@@ -1314,6 +1372,7 @@ function doRestore(inp){
           if(k==='m2_warns') WARNS=data[k];
         }
       });
+      await Promise.all(savePromises);
       toast('تم استعادة النسخة الاحتياطية بنجاح! سيتم إعادة تحميل الصفحة.','success');
       addLog('استعادة بيانات', 'تم استعادة نسخة احتياطية من '+ (data._backup_date||'تاريخ غير معروف'), 'other');
       setTimeout(() => location.reload(), 2000);
@@ -1356,7 +1415,6 @@ function prCard(){
   const c = document.getElementById('proCardPrint'); if(!c) return;
   const w = window.open('','','width=500,height=400');
   w.document.write('<html><head><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet"><script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"><\/script><style>@import url("https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap");body{margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh;background:#f0f0f0;font-family:Cairo,sans-serif}*{margin:0;padding:0;box-sizing:border-box}</style></head><body>'+c.outerHTML+'<script>try{var code="";var svg=document.querySelector("#proBarcodeSVG");if(svg)code=svg.getAttribute("data-value")||"000000";JsBarcode("#proBarcodeSVG",code,{format:"CODE128",width:1.8,height:35,displayValue:false,margin:0})}catch(e){}setTimeout(function(){window.print()},400)<\/script></body></html>');
-['m2_acc','m2_emps','m2_set','m2_att','m2_lvs','m2_pnd','m2_nots','m2_deds','m2_advs','m2_warns','m2_logs'].forEach(k=>localStorage.removeItem(k));
 }
 
 
@@ -1364,14 +1422,17 @@ function prCard(){
 /* ===== Reject Leave with Reason ===== */
 let rejLvId = null;
 function opRejLv(id){rejLvId=id;document.getElementById('rejReason').value='';oM('mRejLv')}
-function cfRejLv(){
+async function cfRejLv(){
   if(!rejLvId)return;
   const reason=document.getElementById('rejReason').value.trim();
   if(!reason){toast('اكتب سبب الرفض','error');return}
-  actLv(rejLvId,'rejected');
   const l=LVS.find(x=>x.id===rejLvId);
-  if(l)l.rejReason=reason;
-  svLS('m2_lvs',LVS);
+  if(!l){cM('mRejLv');rejLvId=null;return}
+  l.status='rejected';l.rejReason=reason;
+  await svLS('m2_lvs',LVS);
+  addNot('طلب إجازة مرفوض: '+getEmpName(l.eid),'leave');
+  addLog('تحديث إجازة','رفض إجازة '+getEmpName(l.eid),'del');
+  rLvs();toast('تم رفض الإجازة','success');
   cM('mRejLv');rejLvId=null;
 }
 
@@ -1437,7 +1498,7 @@ function aiAnswer(q){
 function rEmpAllDeds(){
   if(!curEmp)return;
   const thisMon=new Date().getFullYear()+'-'+String(new Date().getMonth()+1).padStart(2,'0');
-  const monDeds=DEDS.filter(d=>d.mon===thisMon);
+  const monDeds=DEDS.filter(d=>d.eid===curEmp.id&&d.mon===thisMon);
   if(!monDeds.length){document.getElementById('eDSec').innerHTML='<div class="emSt"><i class="fas fa-check-circle"></i>لا توجد خصومات هذا الشهر</div>';return;}
   document.getElementById('eDSec').innerHTML='<h3 style="margin-bottom:10px;font-size:12px"><i class="fas fa-list" style="color:var(--err)"></i> خصومات الشهر الحالي</h3><table class="mTb"><thead><tr><th>الموظف</th><th>المبلغ</th><th>السبب</th></tr></thead><tbody>'+monDeds.map(d=>'<tr><td>'+getEmpName(d.eid)+'</td><td style="color:var(--err);font-weight:700">'+fmtM(d.am)+'</td><td>'+(d.rs||'—')+'</td></tr>').join('')+'</tbody></table>';
 }
@@ -1445,13 +1506,13 @@ function rEmpAllDeds(){
 
 /* ===== Employee: Change Password ===== */
 function opEmpChgPass(){document.getElementById('epOld').value='';document.getElementById('epNew').value='';document.getElementById('epNew2').value='';oM('mEmpPass')}
-function svEmpPass(){
+async function svEmpPass(){
   const old=document.getElementById('epOld').value;const np=document.getElementById('epNew').value;const np2=document.getElementById('epNew2').value;
   if(!curAcc){toast('خطأ في الجلسة','error');return}
   if(old!==curAcc.p){toast('كلمة المرور الحالية غير صحيحة','error');return}
   if(!np||np.length<4){toast('كلمة المرور لازم 4 حروف على الأقل','error');return}
   if(np!==np2){toast('كلمتا المرور غير متطابقتين','error');return}
-  curAcc.p=np;svLS('m2_acc',ACC);cM('mEmpPass');toast('تم تغيير كلمة المرور بنجاح','success');addLog('تغيير كلمة مرور','تم تغيير كلمة مرور الموظف','edit');
+  curAcc.p=np;await svLS('m2_acc',ACC);cM('mEmpPass');toast('تم تغيير كلمة المرور بنجاح','success');addLog('تغيير كلمة مرور','تم تغيير كلمة مرور الموظف','edit');
 }
 
 /* ===== Warning/Strike System ===== */
@@ -1483,8 +1544,8 @@ async function svWarn(){
     const act=SET.w3a||'suspend';const days=SET.w3d||3;const pct=SET.w3p||10;
     let msg='تم تطبيق عقوبة الإنذار الثالث على '+e.name+': ';
     if(act==='suspend'||act==='both'){msg+='إيقاف '+days+' أيام';addNot('إيقاف '+e.name+' عن العمل '+days+' أيام','absence')}
-    if(act==='deduct'||act==='both'){const dedAmt=Math.round((e.salary||0)*pct/100);const mon=new Date().getFullYear()+'-'+String(new Date().getMonth()+1).padStart(2,'0');DEDS.push({eid,am:dedAmt,rs:'عقوبة إنذار ثالث',mon,id:'d'+Date.now()});await svLS('m2_deds',DEDS);msg+='خصم '+pct+'% من المرتب';addNot('خصم عقوبة إنذار: '+e.name+' — '+fmtM(dedAmt),'salary')}
-    addLog('عقوبة إنذار ثالث',msg,'del');toast(msg,'warning');
+    if(act==='deduct'||act==='both'){const dedAmt=Math.round((e.salary||0)*pct/100);const mon=new Date().getFullYear()+'-'+String(new Date().getMonth()+1).padStart(2,'0');DEDS.push({eid,am:dedAmt,rs:'عقوبة إنذار الثالث',mon,id:'d'+Date.now()});await svLS('m2_deds',DEDS);msg+='خصم '+pct+'% من المرتب';addNot('خصم عقوبة إنذار: '+e.name+' — '+fmtM(dedAmt),'salary')}
+    addLog('عقوبة الإنذار الثالث',msg,'del');toast(msg,'warning');
   }
   rEmps();
 }
@@ -1540,9 +1601,7 @@ function sendWASlip(eid){
 }
 
 /* ===== تشغيل أولي مع Firebase ===== */
-async function loadAll(){try{var d=await firebase.database().ref("data").once("value");var v=d.val();if(!v)return;if(v.m2_acc)ACC=v.m2_acc;if(v.m2_emps)EMPS=v.m2_emps;if(v.m2_set)SET=v.m2_set;if(v.m2_att)ATT=v.m2_att;if(v.m2_lvs)LVS=v.m2_lvs;if(v.m2_pnd)PND=v.m2_pnd;if(v.m2_nots)NOTS=v.m2_nots;if(v.m2_deds)DEDS=v.m2_deds;if(v.m2_advs)ADVS=v.m2_advs;if(v.m2_warns)WARNS=v.m2_warns;if(v.m2_logs)LOGS=v.m2_logs}catch(e){}}
 async function bootApp(){
-  if(localStorage.getItem('m2_reg_submitted')){const regSw=document.querySelector('#frmLogin .authSw');if(regSw)regSw.style.display='none'}
   const loader=document.getElementById('fbLoading');
   try{
     const r=await Promise.all([
@@ -1558,15 +1617,13 @@ async function bootApp(){
     EMPS=ld('m2_emps',[]);ATT=ld('m2_att',[]);LVS=ld('m2_lvs',[]);
     PND=ld('m2_pnd',[]);NOTS=ld('m2_nots',[]);DEDS=ld('m2_deds',[]);ADVS=ld('m2_advs',[]);LOGS=ld('m2_logs',[]);WARNS=ld('m2_warns',[]);
   }
-  await loadAll();
   if(loader)loader.style.display='none';
-  if(!ACC.find(a=>a.r==='admin')){ACC.push({u:'admin',p:'admin',r:'admin',ei:null,ln:''});svLS('m2_acc',ACC)}
+  if(!ACC.find(a=>a.r==='admin')){ACC.push({u:'admin',p:'admin',r:'admin',ei:null,ln:''});await svLS('m2_acc',ACC)}
+  /* إخفاء زر إنشاء حساب لو كان قدم طلب قبل كده */
+  if(localStorage.getItem('m2_reg_submitted')){const regSw=document.querySelector('#frmLogin .authSw');if(regSw)regSw.style.display='none'}
   const saved=localStorage.getItem('m2_session');
-  try{var _ed=await firebase.database().ref('data/m2_emps').once('value');if(_ed.val())EMPS=_ed.val()}catch(e){}
-  if(saved){try{const s=JSON.parse(saved);const acc=ACC.find(a=>a.u===s.u&&a.p===s.p);if(acc){if(acc.r==='admin'){curAcc=acc;document.getElementById('authScreen').style.display='none';initAdmin()}else if(acc.ei){curAcc=acc;document.getElementById('authScreen').style.display='none';initEmp()}}}catch(e){}}
+  if(saved){try{const s=JSON.parse(saved);const acc=ACC.find(a=>a.u===s.u&&a.p===s.p);if(acc){if(acc.r==='admin'||acc.r==='manager'||acc.r==='owner'){curAcc=acc;document.getElementById('authScreen').style.display='none';initAdmin()}else if(acc.ei){curAcc=acc;document.getElementById('authScreen').style.display='none';initEmp()}}}catch(e){}}
 }
-setAutoRefresh=setAutoRefresh||function(){setTimeout(async function(){try{var d=await firebase.database().ref("data").once("value");if(d.val()==null)return;var v=d.val();if(v.m2_acc)ACC=v.m2_acc;if(v.m2_emps)EMPS=v.m2_emps;if(v.m2_set)SET=v.m2_set;if(v.m2_att)ATT=v.m2_att;if(v.m2_lvs)LVS=v.m2_lvs;if(v.m2_pnd){PND=v.m2_pnd;if(typeof upPBdg==="function")upPBdg()}if(v.m2_nots){NOTS=v.m2_nots;if(typeof upNBdg==="function")upNBdg()}if(v.m2_deds)DEDS=v.m2_deds;if(v.m2_advs)ADVS=v.m2_advs;if(v.m2_warns)WARNS=v.m2_warns;if(v.m2_logs)LOGS=v.m2_logs;if(typeof rEmps==="function")rEmps()}catch(e){}},1500)}();
-['m2_acc','m2_emps','m2_set','m2_att','m2_lvs','m2_pnd','m2_nots','m2_deds','m2_advs','m2_warns','m2_logs'].forEach(k=>localStorage.removeItem(k));
 bootApp();
 </script>
 </body>
