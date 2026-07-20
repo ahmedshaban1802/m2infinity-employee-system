@@ -534,6 +534,7 @@ textarea.fInp{resize:vertical;min-height:45px}
 <div class="hdrA">
 <span class="lclk" id="eClk"></span>
 <button class="bIcon" onclick="opEmpLv()" title="طلب إجازة"><i class="fas fa-calendar-plus"></i></button>
+<button class="bIcon" onclick="vwEmpCard()" title="كارنيه"><i class="fas fa-id-card"></i></button>
 <button class="bIcon" onclick="opEmpChgPass()" title="تغيير كلمة المرور"><i class="fas fa-key"></i></button>
 <button class="bIcon" onclick="tgTheme()"><i class="fas fa-moon" id="thI2"></i></button>
 <button class="bIcon dng" onclick="doLogout()"><i class="fas fa-sign-out-alt"></i></button>
@@ -834,12 +835,12 @@ function setAutoRefresh(){
 function setEmpRefresh(){
   setInterval(async()=>{
     try{
-      const [_emps,_set,_att,_warns]=await Promise.all([
-        ldFB('m2_emps',EMPS),ldFB('m2_set',SET),ldFB('m2_att',ATT),ldFB('m2_warns',WARNS)
+      const [_emps,_set,_att,_warns,_lvs,_nots]=await Promise.all([
+        ldFB('m2_emps',EMPS),ldFB('m2_set',SET),ldFB('m2_att',ATT),ldFB('m2_warns',WARNS),ldFB('m2_lvs',LVS),ldFB('m2_nots',NOTS)
       ]);
-      EMPS=_emps;SET=_set;ATT=_att;WARNS=_warns;
+      EMPS=_emps;SET=_set;ATT=_att;WARNS=_warns;LVS=_lvs;NOTS=_nots;
       if(curEmp){const fresh=EMPS.find(e=>e.id===curEmp.id);if(fresh){Object.assign(curEmp,fresh)}
-        rEmpInfo();rEmpAtt();}
+        rEmpInfo();rEmpAtt();rEmpLv();}
     }catch(e){}
   },3000);
 }
@@ -1380,6 +1381,31 @@ function doRestore(inp){
   };
   r.readAsText(f);
   inp.value = '';
+}
+
+/* ===== كارنيه الموظف (من حسابه) ===== */
+function vwEmpCard(){
+  if(!curEmp)return;
+  const e=curEmp;
+  const ini=e.name.split(' ').map(w=>w[0]).join('').substring(0,2);
+  let avH='<span>'+ini+'</span>';
+  if(e.photo)avH='<img src="'+e.photo+'">';
+  let logoH='<i class="fas fa-building" style="font-size:18px;color:#fff"></i>';
+  if(SET.logo)logoH='<img src="'+SET.logo+'">';
+  document.getElementById('cardC').innerHTML=
+    '<div class="proCard" id="proCardPrint">'+
+      '<div class="proCardTop"><div class="proLogo">'+logoH+'</div><div class="proCN">'+(SET.cn||'M2INFINITY')+'</div></div>'+
+      '<div class="proCardBody">'+
+        '<div class="proCardAv">'+avH+'</div>'+
+        '<div class="proCardDet"><h3>'+e.name+'</h3><p>'+e.job+'</p></div>'+
+      '</div>'+
+      '<div class="proCardBot">'+
+        '<div class="proBarcode"><svg id="proBarcodeSVG"></svg></div>'+
+        '<div class="proCode"><small>EMPLOYEE ID</small><strong>'+e.code+'</strong></div>'+
+      '</div>'+
+    '</div>';
+  oM('mCard');
+  setTimeout(()=>{try{JsBarcode('#proBarcodeSVG',e.code,{format:'CODE128',width:1.8,height:35,displayValue:false,margin:0})}catch(ex){}},150);
 }
 
 /* ===== Professional Card (overwrite vwCard) ===== */
