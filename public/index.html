@@ -420,7 +420,7 @@ textarea.fInp{resize:vertical;min-height:45px}
 .brActBtns{display:flex;gap:6px}
 
 </style>
-</head>
+<link rel="manifest" href="/manifest.json"><meta name="theme-color" content="#0d9488"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"></head>
 <body>
 
 <!-- شاشة تحميل Firebase -->
@@ -1505,7 +1505,7 @@ function vwCard(id){
 function prCard(){
   const c = document.getElementById('proCardPrint'); if(!c) return;
   const w = window.open('','','width=500,height=400');
-  w.document.write('<html><head><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet"><script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"><\/script><style>@import url("https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap");body{margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh;background:#f0f0f0;font-family:Cairo,sans-serif}*{margin:0;padding:0;box-sizing:border-box}</style></head><body>'+c.outerHTML+'<script>try{var code="";var svg=document.querySelector("#proBarcodeSVG");if(svg)code=svg.getAttribute("data-value")||"000000";JsBarcode("#proBarcodeSVG",code,{format:"CODE128",width:1.8,height:35,displayValue:false,margin:0})}catch(e){}setTimeout(function(){window.print()},400)<\/script></body></html>');
+  w.document.write('<html><head><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet"><script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"><\/script><style>@import url("https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap");body{margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh;background:#f0f0f0;font-family:Cairo,sans-serif}*{margin:0;padding:0;box-sizing:border-box}</style><link rel="manifest" href="/manifest.json"><meta name="theme-color" content="#0d9488"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"></head><body>'+c.outerHTML+'<script>try{var code="";var svg=document.querySelector("#proBarcodeSVG");if(svg)code=svg.getAttribute("data-value")||"000000";JsBarcode("#proBarcodeSVG",code,{format:"CODE128",width:1.8,height:35,displayValue:false,margin:0})}catch(e){}setTimeout(function(){window.print()},400)<\/script></body></html>');
 ['m2_acc','m2_emps','m2_set','m2_att','m2_lvs','m2_pnd','m2_nots','m2_deds','m2_advs','m2_warns','m2_logs'].forEach(k=>localStorage.removeItem(k));
 }
 
@@ -1716,7 +1716,7 @@ async function bootApp(){
   try{var _ed=await firebase.database().ref('data/m2_emps').once('value');if(_ed.val())EMPS=_ed.val()}catch(e){}
   if(saved){try{const s=JSON.parse(saved);const acc=ACC.find(a=>a.u===s.u&&a.p===s.p);if(acc){if(acc.r==='admin'){curAcc=acc;document.getElementById('authScreen').style.display='none';initAdmin()}else if(acc.ei){curAcc=acc;document.getElementById('authScreen').style.display='none';initEmp()}}}catch(e){}}
 }
-bootApp();
+if("serviceWorker" in navigator)navigator.serviceWorker.register("/sw.js");bootApp();
 </script>
 </body>
 </html>
