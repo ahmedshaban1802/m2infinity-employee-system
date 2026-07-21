@@ -1505,7 +1505,6 @@ function vwCard(id){
 function prCard(){
   const c = document.getElementById('proCardPrint'); if(!c) return;
   const w = window.open('','','width=500,height=400');
-<script src="/ai-brain.js" defer></script>
 </body></html>');
 ['m2_acc','m2_emps','m2_set','m2_att','m2_lvs','m2_pnd','m2_nots','m2_deds','m2_advs','m2_warns','m2_logs'].forEach(k=>localStorage.removeItem(k));
 }
@@ -1719,6 +1718,5 @@ async function bootApp(){
 }
 if("serviceWorker" in navigator)navigator.serviceWorker.register("/sw.js");bootApp();
 </script>
-<script src="/ai-brain.js" defer></script>
 </body>
 </html>
