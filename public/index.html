@@ -1695,15 +1695,19 @@ function sendWASlip(eid){
 
 /* ===== تشغيل أولي مع Firebase ===== */
 async function loadAll(){try{var d=await firebase.database().ref("data").once("value");var v=d.val();if(!v)return;if(v.m2_acc)ACC=v.m2_acc;if(v.m2_emps)EMPS=v.m2_emps;if(v.m2_set)SET=v.m2_set;if(v.m2_att)ATT=v.m2_att;if(v.m2_lvs)LVS=v.m2_lvs;if(v.m2_pnd)PND=v.m2_pnd;if(v.m2_nots)NOTS=v.m2_nots;if(v.m2_deds)DEDS=v.m2_deds;if(v.m2_advs)ADVS=v.m2_advs;if(v.m2_warns)WARNS=v.m2_warns;if(v.m2_logs)LOGS=v.m2_logs}catch(e){}}
+let _bootDone=false;
 async function bootApp(){
   if(localStorage.getItem('m2_reg_submitted')){const regSw=document.querySelector('#frmLogin .authSw');if(regSw)regSw.style.display='none'}
   const loader=document.getElementById('fbLoading');
   try{
-    const r=await Promise.all([
+    const r=await Promise.race([
+      Promise.all([
       ldFB('m2_acc',DEF_ACC), ldFB('m2_set',DEF_SET), ldFB('m2_emps',[]),
       ldFB('m2_att',[]), ldFB('m2_lvs',[]), ldFB('m2_pnd',[]),
       ldFB('m2_nots',[]), ldFB('m2_deds',[]), ldFB('m2_advs',[]),
       ldFB('m2_logs',[]), ldFB('m2_warns',[])
+      ]),
+      new Promise((_,rej)=>setTimeout(()=>rej(new Error('boot timeout')),8000))
     ]);
     ACC=r[0];SET=r[1];EMPS=r[2];ATT=r[3];LVS=r[4];PND=r[5];NOTS=r[6];DEDS=r[7];ADVS=r[8];LOGS=r[9]||[];WARNS=r[10]||[];
   }catch(e){
@@ -1713,6 +1717,7 @@ async function bootApp(){
     PND=ld('m2_pnd',[]);NOTS=ld('m2_nots',[]);DEDS=ld('m2_deds',[]);ADVS=ld('m2_advs',[]);LOGS=ld('m2_logs',[]);WARNS=ld('m2_warns',[]);
   }
   await loadAll();
+  _bootDone=true;
   if(loader)loader.style.display='none';
   if(!ACC.find(a=>a.r==='admin')){ACC.push({u:'admin',p:'admin',r:'admin',ei:null,ln:''});svLS('m2_acc',ACC)}
   const saved=localStorage.getItem('m2_session');
