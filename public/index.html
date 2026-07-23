@@ -1,9 +1,6 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<meta name="description" content="نظام M2INFINITY لإدارة الموظفين — حضور، رواتب، إجازات، سلف، خصومات وتقارير">
-<meta name="keywords" content="نظام إدارة الموظفين, حضور و انصراف, رواتب, إجازات, M2INFINITY">
-<meta name="google-site-verification" content="yyywM7LvTJjF_73vMeiSjV1hwnl7cB9LM9SPZuDQwWA" />
 <meta charset="UTF-8">
 <meta http-equiv="Cache-Control" content="no-cache,no-store,must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -423,7 +420,7 @@ textarea.fInp{resize:vertical;min-height:45px}
 .brActBtns{display:flex;gap:6px}
 
 </style>
-<link rel="manifest" href="/manifest.json"><meta name="theme-color" content="#0d9488"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"></head>
+</head>
 <body>
 
 <!-- شاشة تحميل Firebase -->
@@ -1508,7 +1505,7 @@ function vwCard(id){
 function prCard(){
   const c = document.getElementById('proCardPrint'); if(!c) return;
   const w = window.open('','','width=500,height=400');
-</body></html>');
+  w.document.write('<html><head><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet"><script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"><\/script><style>@import url("https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap");body{margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh;background:#f0f0f0;font-family:Cairo,sans-serif}*{margin:0;padding:0;box-sizing:border-box}</style></head><body>'+c.outerHTML+'<script>try{var code="";var svg=document.querySelector("#proBarcodeSVG");if(svg)code=svg.getAttribute("data-value")||"000000";JsBarcode("#proBarcodeSVG",code,{format:"CODE128",width:1.8,height:35,displayValue:false,margin:0})}catch(e){}setTimeout(function(){window.print()},400)<\/script></body></html>');
 ['m2_acc','m2_emps','m2_set','m2_att','m2_lvs','m2_pnd','m2_nots','m2_deds','m2_advs','m2_warns','m2_logs'].forEach(k=>localStorage.removeItem(k));
 }
 
@@ -1695,19 +1692,15 @@ function sendWASlip(eid){
 
 /* ===== تشغيل أولي مع Firebase ===== */
 async function loadAll(){try{var d=await firebase.database().ref("data").once("value");var v=d.val();if(!v)return;if(v.m2_acc)ACC=v.m2_acc;if(v.m2_emps)EMPS=v.m2_emps;if(v.m2_set)SET=v.m2_set;if(v.m2_att)ATT=v.m2_att;if(v.m2_lvs)LVS=v.m2_lvs;if(v.m2_pnd)PND=v.m2_pnd;if(v.m2_nots)NOTS=v.m2_nots;if(v.m2_deds)DEDS=v.m2_deds;if(v.m2_advs)ADVS=v.m2_advs;if(v.m2_warns)WARNS=v.m2_warns;if(v.m2_logs)LOGS=v.m2_logs}catch(e){}}
-let _bootDone=false;
 async function bootApp(){
   if(localStorage.getItem('m2_reg_submitted')){const regSw=document.querySelector('#frmLogin .authSw');if(regSw)regSw.style.display='none'}
   const loader=document.getElementById('fbLoading');
   try{
-    const r=await Promise.race([
-      Promise.all([
+    const r=await Promise.all([
       ldFB('m2_acc',DEF_ACC), ldFB('m2_set',DEF_SET), ldFB('m2_emps',[]),
       ldFB('m2_att',[]), ldFB('m2_lvs',[]), ldFB('m2_pnd',[]),
       ldFB('m2_nots',[]), ldFB('m2_deds',[]), ldFB('m2_advs',[]),
       ldFB('m2_logs',[]), ldFB('m2_warns',[])
-      ]),
-      new Promise((_,rej)=>setTimeout(()=>rej(new Error('boot timeout')),8000))
     ]);
     ACC=r[0];SET=r[1];EMPS=r[2];ATT=r[3];LVS=r[4];PND=r[5];NOTS=r[6];DEDS=r[7];ADVS=r[8];LOGS=r[9]||[];WARNS=r[10]||[];
   }catch(e){
@@ -1717,15 +1710,13 @@ async function bootApp(){
     PND=ld('m2_pnd',[]);NOTS=ld('m2_nots',[]);DEDS=ld('m2_deds',[]);ADVS=ld('m2_advs',[]);LOGS=ld('m2_logs',[]);WARNS=ld('m2_warns',[]);
   }
   await loadAll();
-  _bootDone=true;
   if(loader)loader.style.display='none';
   if(!ACC.find(a=>a.r==='admin')){ACC.push({u:'admin',p:'admin',r:'admin',ei:null,ln:''});svLS('m2_acc',ACC)}
   const saved=localStorage.getItem('m2_session');
   try{var _ed=await firebase.database().ref('data/m2_emps').once('value');if(_ed.val())EMPS=_ed.val()}catch(e){}
   if(saved){try{const s=JSON.parse(saved);const acc=ACC.find(a=>a.u===s.u&&a.p===s.p);if(acc){if(acc.r==='admin'){curAcc=acc;document.getElementById('authScreen').style.display='none';initAdmin()}else if(acc.ei){curAcc=acc;document.getElementById('authScreen').style.display='none';initEmp()}}}catch(e){}}
 }
-if("serviceWorker" in navigator)navigator.serviceWorker.register("/sw.js");bootApp();
-setTimeout(function(){if(!_bootDone){var l=document.getElementById("fbLoading");if(l)l.style.display="none"}},8000);
+bootApp();
 </script>
 </body>
 </html>
