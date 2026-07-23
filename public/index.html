@@ -1696,6 +1696,7 @@ function sendWASlip(eid){
 /* ===== تشغيل أولي مع Firebase ===== */
 async function loadAll(){try{var d=await firebase.database().ref("data").once("value");var v=d.val();if(!v)return;if(v.m2_acc)ACC=v.m2_acc;if(v.m2_emps)EMPS=v.m2_emps;if(v.m2_set)SET=v.m2_set;if(v.m2_att)ATT=v.m2_att;if(v.m2_lvs)LVS=v.m2_lvs;if(v.m2_pnd)PND=v.m2_pnd;if(v.m2_nots)NOTS=v.m2_nots;if(v.m2_deds)DEDS=v.m2_deds;if(v.m2_advs)ADVS=v.m2_advs;if(v.m2_warns)WARNS=v.m2_warns;if(v.m2_logs)LOGS=v.m2_logs}catch(e){}}
 let _bootDone=false;
+let _bootDone=false;
 async function bootApp(){
   if(localStorage.getItem('m2_reg_submitted')){const regSw=document.querySelector('#frmLogin .authSw');if(regSw)regSw.style.display='none'}
   const loader=document.getElementById('fbLoading');
@@ -1725,6 +1726,7 @@ async function bootApp(){
   if(saved){try{const s=JSON.parse(saved);const acc=ACC.find(a=>a.u===s.u&&a.p===s.p);if(acc){if(acc.r==='admin'){curAcc=acc;document.getElementById('authScreen').style.display='none';initAdmin()}else if(acc.ei){curAcc=acc;document.getElementById('authScreen').style.display='none';initEmp()}}}catch(e){}}
 }
 if("serviceWorker" in navigator)navigator.serviceWorker.register("/sw.js");bootApp();
+setTimeout(function(){if(!_bootDone){var l=document.getElementById("fbLoading");if(l)l.style.display="none"}},8000);
 </script>
 </body>
 </html>
